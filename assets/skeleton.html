@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<!--
+  html-guide 骨架模板
+  ===================
+  使用方式：复制本文件为最终输出名，然后在 <main> 内按 structure-guide.md 判定的
+  章节结构撰写正文。CSS/JS 全部内联，不得引用任何外部资源。
+  骨架已内置：自动生成两级目录、语法高亮、深浅色切换、代码复制、Tab、速查过滤。
+  组件类名与 references/design-system.md 一一对应。写完后跑 scripts/check_html.py。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="在这里写一句页面描述（SEO 与分享用）">
+<title>页面标题 — 副标题</title>
+<style>
+  /* ============ 设计令牌（浅色 / 深色）============ */
+  :root, html[data-theme="light"]{
+    /* 浅色用暖纸张色而非纯白——纯白底太刺眼；卡片保持白以形成对比 */
+    --bg:#f7f5f2; --bg-soft:#efece7; --surface:#ffffff; --surface-2:#eae6e0;
+    --border:#e5e1da; --text:#1e293b; --text-2:#475569; --text-3:#64748b;
+    --accent:#4f46e5; --accent-2:#0d9488; --accent-soft:#eef2ff; --link:#4338ca;
+    --code-bg:#0f172a; --code-ink:#e2e8f0;
+    --info:#0369a1; --info-bg:#f0f9ff;
+    --tip:#047857; --tip-bg:#ecfdf5;
+    --warning:#b45309; --warning-bg:#fffbeb;
+    --danger:#b91c1c; --danger-bg:#fef2f2;
+    --ok:#047857; --ok-bg:#d1fae5; --no:#b91c1c; --no-bg:#fee2e2;
+    --radius-sm:6px; --radius:10px; --radius-lg:14px;
+    --space:clamp(2.5rem,6vw,4rem);
+    --shadow:0 1px 2px rgba(15,23,42,.06);
+    --shadow-lg:0 6px 20px rgba(15,23,42,.10);
+  }
+  html[data-theme="dark"]{
+    --bg:#0b1220; --bg-soft:#0f172a; --surface:#111a2e; --surface-2:#1e293b;
+    --border:#2b3a52; --text:#e2e8f0; --text-2:#94a3b8; --text-3:#64748b;
+    --accent:#818cf8; --accent-2:#2dd4bf; --accent-soft:rgba(129,140,248,.14); --link:#a5b4fc;
+    --code-bg:#050a14; --code-ink:#e2e8f0;
+    --info:#38bdf8; --info-bg:rgba(56,189,248,.12);
+    --tip:#34d399; --tip-bg:rgba(52,211,153,.12);
+    --warning:#fbbf24; --warning-bg:rgba(251,191,36,.12);
+    --danger:#f87171; --danger-bg:rgba(248,113,113,.12);
+    --ok:#34d399; --ok-bg:rgba(52,211,153,.16); --no:#f87171; --no-bg:rgba(248,113,113,.16);
+    --shadow:0 1px 2px rgba(0,0,0,.4);
+    --shadow-lg:0 6px 20px rgba(0,0,0,.5);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1220; --bg-soft:#0f172a; --surface:#111a2e; --surface-2:#1e293b;
+      --border:#2b3a52; --text:#e2e8f0; --text-2:#94a3b8; --text-3:#64748b;
+      --accent:#818cf8; --accent-2:#2dd4bf; --accent-soft:rgba(129,140,248,.14); --link:#a5b4fc;
+      --code-bg:#050a14; --code-ink:#e2e8f0;
+      --info:#38bdf8; --info-bg:rgba(56,189,248,.12);
+      --tip:#34d399; --tip-bg:rgba(52,211,153,.12);
+      --warning:#fbbf24; --warning-bg:rgba(251,191,36,.12);
+      --danger:#f87171; --danger-bg:rgba(248,113,113,.12);
+      --ok:#34d399; --ok-bg:rgba(52,211,153,.16); --no:#f87171; --no-bg:rgba(248,113,113,.16);
+      --shadow:0 1px 2px rgba(0,0,0,.4);
+      --shadow-lg:0 6px 20px rgba(0,0,0,.5);
+    }
+  }
+
+  /* ============ 基础 ============ */
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font:16px/1.7 -apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{line-height:1.3; margin:0 0 .5em; font-weight:650}
+  h1{font-size:clamp(1.8rem,4vw,2.4rem)}
+  h2{font-size:1.5rem; margin-top:calc(var(--space) + .5rem); scroll-margin-top:96px}
+  h3{font-size:1.2rem; margin-top:2.2rem}
+  p{margin:.6em 0 1em}
+  a{color:var(--link); text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:"JetBrains Mono","Cascadia Code",Consolas,"Liberation Mono","Courier New",monospace; font-size:.9em}
+  /* 行内代码强调：文件名/命令/变量 —— 粗体 + 主色，比普通 code 更醒目 */
+  p code,li code,td code{
+    background:var(--accent-soft); color:var(--accent); font-weight:600;
+    border-radius:4px; padding:.1em .4em;
+  }
+  sup a{text-decoration:none; font-weight:700}
+  section{scroll-margin-top:96px}
+
+  /* ============ 头部 hero ============ */
+  .hero{
+    position:relative; padding:clamp(3rem,7vw,5rem) 1.5rem clamp(2rem,4vw,3rem);
+    background:
+      radial-gradient(60% 90% at 85% 0%, var(--accent-soft), transparent 60%),
+      radial-gradient(40% 70% at 5% 100%, var(--accent-soft), transparent 55%),
+      var(--bg-soft);
+    border-bottom:1px solid var(--border);
+    text-align:center;
+  }
+  .hero h1{margin-bottom:.4rem}
+  .hero h1.grad{
+    background:linear-gradient(100deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .hero .subtitle{color:var(--text-2); max-width:40rem; margin:0 auto 1.2rem; font-size:1.1rem}
+  .hero .meta{color:var(--text-3); font-size:.9rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; align-items:center}
+
+  /* 主题切换按钮（吸顶右上角） */
+  .theme-toggle{
+    position:fixed; top:14px; right:14px; z-index:100;
+    width:2.4rem; height:2.4rem; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface); color:var(--text-2);
+    cursor:pointer; font-size:1.05rem; box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .theme-toggle:hover{border-color:var(--accent); color:var(--accent)}
+  .print-btn{
+    position:fixed; top:14px; right:3.6rem; z-index:100;
+    width:2.4rem; height:2.4rem; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface); color:var(--text-2);
+    cursor:pointer; font-size:1.05rem; box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .print-btn:hover{border-color:var(--accent); color:var(--accent)}
+  .to-top{
+    position:fixed; right:14px; bottom:20px; z-index:100;
+    width:2.5rem; height:2.5rem; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface); color:var(--text-2);
+    cursor:pointer; font-size:1.2rem; font-weight:700; box-shadow:var(--shadow-lg);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transform:translateY(6px);
+    transition:opacity .2s, transform .2s;
+  }
+  .to-top.show{opacity:1; pointer-events:auto; transform:none}
+  .to-top:hover{border-color:var(--accent); color:var(--accent)}
+
+  /* ============ 布局 ============ */
+  .layout{display:flex; gap:2.5rem; max-width:76rem; margin:0 auto; padding:var(--space) 1.5rem}
+  #toc{
+    position:sticky; top:24px; align-self:flex-start; width:15.5rem; flex:none;
+    max-height:calc(100vh - 48px); overflow:auto; font-size:.92rem;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
+  #toc::-webkit-scrollbar{width:0;height:0}
+  #toc ul{list-style:none; margin:0; padding:0}
+  #toc > ul > li{margin:.15rem 0}
+  #toc a{display:block; padding:.32rem .6rem; border-radius:var(--radius-sm); color:var(--text-2); border-left:2px solid transparent}
+  #toc a:hover{background:var(--surface-2); text-decoration:none}
+  #toc a.active{color:var(--accent); background:var(--accent-soft); font-weight:700; border-left-color:var(--accent)}
+  /* 一级标题（h2）更深更粗；二级（.lvl2）缩进、更小更浅——层级一眼可分 */
+  #toc > ul > li > a{font-weight:650; color:var(--text)}
+  #toc .lvl2{padding-left:1.6rem; font-size:.85rem; font-weight:400; color:var(--text-3)}
+  #toc .lvl2.active{color:var(--accent); font-weight:650}
+  main{flex:1; min-width:0; max-width:46rem}
+
+  /* ============ 组件：callout 提示块 ============ */
+  .callout{border:1px solid var(--border); border-left-width:4px; border-radius:var(--radius); padding:.9rem 1.1rem; margin:1.2em 0; background:var(--surface)}
+  .callout .callout-head{display:flex; align-items:center; gap:.4rem; font-weight:650; margin-bottom:.3rem}
+  .callout .icon{width:1em; height:1em}
+  .callout.info{border-left-color:var(--info)} .callout.info .callout-head{color:var(--info)}
+  .callout.tip{border-left-color:var(--tip)} .callout.tip .callout-head{color:var(--tip)}
+  .callout.warning{border-left-color:var(--warning)} .callout.warning .callout-head{color:var(--warning)}
+  .callout.danger{border-left-color:var(--danger)} .callout.danger .callout-head{color:var(--danger)}
+  .callout p:last-child{margin-bottom:0}
+
+  /* ============ 组件：步骤（序号自动递增；预期结果内嵌同框）============ */
+  .steps{list-style:none; counter-reset:step; padding:0; margin:1.5em 0}
+  .step{position:relative; padding:1.1rem 1.1rem 1.1rem 3.2rem; margin:0 0 1rem; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface)}
+  .step .step-num{
+    position:absolute; left:1.1rem; top:1.15rem; width:1.7rem; height:1.7rem; border-radius:50%;
+    background:var(--accent); color:#fff; font-weight:700; font-size:.9rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .step .step-head h3{margin:0 0 .3rem}
+  .step > p:first-of-type{margin-top:.3em}
+  .step-result{
+    margin-top:.8rem; padding:.6rem .9rem; border-radius:var(--radius-sm);
+    background:var(--ok-bg); color:var(--ok); font-size:.92rem;
+  }
+  .step-result::before{content:"✅ 预期结果："; font-weight:650}
+
+  /* ============ 组件：代码块 + 语法高亮 ============ */
+  pre{
+    position:relative; background:var(--code-bg); color:var(--code-ink);
+    border-radius:var(--radius); padding:1rem 3rem 1rem 1rem; overflow-x:auto;
+    margin:1em 0; font-size:.9rem; line-height:1.6;
+  }
+  pre code{background:transparent; border:0; padding:0; color:inherit}
+  .tok-comment{color:#8b949e; font-style:italic}
+  .tok-string{color:#7ee787}
+  .tok-keyword{color:#ff7b72}
+  .tok-number{color:#79c0ff}
+  .tok-function{color:#d2a8ff}
+  .tok-builtin{color:#ffa657}
+  .tok-type{color:#ffa657}
+  .copy-btn{
+    position:absolute; top:.5rem; right:.5rem; cursor:pointer;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); color:var(--code-ink);
+    border-radius:var(--radius-sm); padding:.2rem .55rem; font-size:.78rem; font-family:inherit;
+  }
+  .copy-btn:hover{background:rgba(255,255,255,.16)}
+  .copy-btn.copied{background:rgba(52,211,153,.25); border-color:rgba(52,211,153,.4)}
+  .lang-tag{position:absolute; top:.5rem; right:3.4rem; color:rgba(226,232,240,.55); font-size:.75rem}
+
+  /* ============ 组件：表格（彩色表头 + 支持/不支持标签）============ */
+  .table-wrap{overflow-x:auto; margin:1.2em 0; border:1px solid var(--border); border-radius:var(--radius)}
+  table{border-collapse:collapse; width:100%; font-size:.95rem; background:var(--surface)}
+  th,td{text-align:left; padding:.6rem .9rem; border-bottom:1px solid var(--border); vertical-align:top}
+  thead th{background:var(--accent-soft); color:var(--accent); font-weight:650; white-space:nowrap}
+  tbody tr:nth-child(even){background:var(--bg-soft)}
+  tbody tr:last-child td{border-bottom:0}
+  /* 表格内语义标签：支持/不支持/推荐 */
+  .tag-ok{display:inline-block; padding:.1em .5em; border-radius:999px; background:var(--ok-bg); color:var(--ok); font-size:.8rem; font-weight:650; white-space:nowrap}
+  .tag-no{display:inline-block; padding:.1em .5em; border-radius:999px; background:var(--no-bg); color:var(--no); font-size:.8rem; font-weight:650; white-space:nowrap}
+
+  /* ============ 组件：卡片网格 ============ */
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin:1.4em 0}
+  .card{position:relative; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); padding:1.1rem; box-shadow:var(--shadow)}
+  .card h3{margin:0 0 .4rem; font-size:1.05rem}
+  .card p{margin:0; color:var(--text-2); font-size:.95rem}
+  .card .badge{position:absolute; top:.6rem; right:.6rem}
+
+  /* ============ 组件：徽标 / 关键词标签 ============ */
+  .badge{
+    display:inline-block; padding:.15em .55em; border-radius:999px; font-size:.78rem; font-weight:600;
+    background:var(--accent-soft); color:var(--accent); border:1px solid transparent; white-space:nowrap;
+  }
+  .badge.info{background:var(--info-bg); color:var(--info)}
+  .badge.tip{background:var(--tip-bg); color:var(--tip)}
+  .badge.warning{background:var(--warning-bg); color:var(--warning)}
+  .badge.danger{background:var(--danger-bg); color:var(--danger)}
+  /* 技术关键词标签组 */
+  .chips{display:flex; flex-wrap:wrap; gap:.4rem; margin:1em 0}
+  .chip{
+    display:inline-block; padding:.15em .6em; border-radius:6px; font-size:.8rem; font-weight:600;
+    background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); white-space:nowrap;
+  }
+  .chip.t1{background:var(--accent-soft); color:var(--accent)}
+  .chip.t2{background:var(--tip-bg); color:var(--tip)}
+  .chip.t3{background:var(--info-bg); color:var(--info)}
+  /* 终端徽标：圆角方框 + `>_`，代表命令行/终端（标题里放这个代替 emoji） */
+  .term-badge{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:.06em .42em .1em; border-radius:6px;
+    background:var(--code-bg); color:var(--code-ink);
+    font-family:"JetBrains Mono","Cascadia Code",Consolas,monospace; font-weight:600;
+    font-size:.82em; line-height:1.2; vertical-align:.14em; margin-right:.35rem;
+  }
+  .term-badge::after{content:"▍"; color:var(--accent); margin-left:1px; animation:blink 1.1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ============ 组件：Tab ============ */
+  .tabs{margin:1.4em 0}
+  .tab-bar{display:flex; gap:.3rem; border-bottom:1px solid var(--border); flex-wrap:wrap}
+  .tab{
+    border:1px solid transparent; border-bottom:none; background:transparent; color:var(--text-2);
+    padding:.5rem 1rem; border-radius:var(--radius-sm) var(--radius-sm) 0 0; cursor:pointer;
+    font-family:inherit; font-size:.95rem;
+  }
+  .tab:hover{background:var(--surface-2)}
+  .tab.active{color:var(--accent); border-color:var(--border); background:var(--surface); font-weight:600}
+  .tab-panel{display:none; border:1px solid var(--border); border-top:none; border-radius:0 0 var(--radius) var(--radius); background:var(--surface); padding:1.1rem}
+  .tab-panel.active{display:block}
+
+  /* ============ 组件：checklist ============ */
+  .checklist{list-style:none; padding:0; margin:1.2em 0}
+  .checklist li{padding:.4rem 0}
+  .checklist input{margin-right:.5rem; accent-color:var(--accent)}
+
+  /* ============ 组件：速查过滤 ============ */
+  /* 速查表把搜索框放进 .sticky-toolbar 可实现吸顶，随滚动固定在顶部 */
+  .sticky-toolbar{
+    position:sticky; top:0; z-index:50; padding:.8rem 0;
+    background:var(--bg); border-bottom:1px solid var(--border); margin-bottom:1.2rem;
+  }
+  @supports (backdrop-filter: blur(8px)) or (-webkit-backdrop-filter: blur(8px)){
+    .sticky-toolbar{
+      background:color-mix(in srgb, var(--bg) 88%, transparent);
+      -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    }
+  }
+  .sticky-toolbar .search-box{margin-bottom:.5rem}
+  .search-box{
+    width:100%; padding:.65rem 1rem; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--surface); color:var(--text); font-size:.95rem; margin-bottom:1rem;
+    box-shadow:var(--shadow); transition:border-color .15s, box-shadow .15s;
+  }
+  .search-box::placeholder{color:var(--text-3)}
+  .search-box:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+
+  /* ============ 组件：快速跳转按钮（hero 用）============ */
+  .jumps{display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1rem}
+  .jump{
+    display:inline-block; padding:.45rem 1.1rem; border-radius:999px;
+    background:var(--accent); color:#fff; font-size:.9rem; font-weight:600;
+  }
+  .jump:hover{filter:brightness(1.08); text-decoration:none}
+  .jump.ghost{background:var(--surface); color:var(--accent); border:1px solid var(--accent)}
+
+  /* ============ 组件：决策小测（可用、自动给结论）============ */
+  .quiz{border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); padding:1.2rem; margin:1.4em 0}
+  .quiz-q{margin:.8rem 0}
+  .quiz-q-text{font-weight:650; margin-bottom:.4rem}
+  .quiz label{display:flex; align-items:center; gap:.45rem; padding:.3rem 0; cursor:pointer}
+  .quiz input{margin:0; accent-color:var(--accent)}
+  .quiz-btn{
+    margin-top:.9rem; padding:.5rem 1.3rem; border:0; border-radius:var(--radius-sm);
+    background:var(--accent); color:#fff; font-weight:650; cursor:pointer; font-size:.95rem; font-family:inherit;
+  }
+  .quiz-btn:hover{filter:brightness(1.08)}
+  .quiz-result{
+    margin-top:.9rem; padding:.8rem 1rem; border-radius:var(--radius-sm);
+    background:var(--accent-soft); color:var(--accent); font-weight:600; display:none;
+  }
+  .quiz-result.show{display:block}
+
+  /* ============ 组件：来源 ============ */
+  .sources li{margin:.4em 0; color:var(--text-2); font-size:.95rem}
+  .sources li:target{background:var(--accent-soft); border-radius:var(--radius-sm); padding:.2em .4em}
+
+  /* ============ 页脚 ============ */
+  footer{border-top:1px solid var(--border); margin-top:var(--space); padding:1.5rem; text-align:center; color:var(--text-3); font-size:.85rem}
+
+  /* ============ 打印 ============ */
+  @media print{
+    body{background:#fff; color:#000}
+    .hero{background:#fff !important; border:none}
+    .theme-toggle,.print-btn,.to-top,#toc,.copy-btn,.lang-tag,.tab-bar,.search-box{display:none !important}
+    .tab-panel{display:block !important; border:none; padding:0}
+    a{color:#000; text-decoration:underline}
+    pre,code{background:#f5f5f5; color:#000; border:1px solid #ddd}
+    .tok-comment,.tok-string,.tok-keyword,.tok-number,.tok-function,.tok-builtin,.tok-type{color:#000 !important; font-style:normal !important}
+    .layout{display:block; max-width:none; padding:0}
+    pre{white-space:pre-wrap; word-break:break-all}
+    section{scroll-margin-top:0}
+    .step,.callout,.card{border-color:#bbb; box-shadow:none; break-inside:avoid}
+    th,td{border-color:#bbb}
+  }
+
+  /* ============ 响应式 ============ */
+  @media (max-width: 820px){
+    .layout{flex-direction:column}
+    #toc{position:static; width:100%; max-height:none; order:-1}
+    #toc a{display:inline-block; margin:.1rem .2rem}
+    #toc .lvl2{display:none}  /* 小屏只留一级目录 */
+    .hero{padding-top:3.5rem} /* 给主题按钮留出空间 */
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>页面主标题</h1>
+  <p class="subtitle">一句话说清：这份文档教你/讲什么，适用对象与前提。</p>
+  <div class="meta">
+    <span>📅 2026-08-04</span>
+    <span>🕐 约 X 分钟阅读</span>
+    <!-- 椭圆/胶囊标签 .badge = 文章类别（教程/指南/速查/讲解/选型） -->
+    <span class="badge">教程</span>
+    <!-- 方形圆角标签 .chip = 涉及的技术/关键词（放 hero 元信息里也用 .chip） -->
+    <span class="chip t1">Python</span>
+  </div>
+</header>
+
+<button class="theme-toggle" id="themeToggle" aria-label="切换主题">🌓</button>
+<button class="print-btn" id="printBtn" aria-label="打印 / 导出 PDF" title="打印 / 导出 PDF">🖨️</button>
+<button class="to-top" id="toTop" aria-label="回到顶部" title="回到顶部">↑</button>
+
+<div class="layout">
+  <!-- 目录由 JS 从 main 内的 h2/h3 自动生成（缺失 id 也会自动补） -->
+  <nav id="toc" aria-label="目录"></nav>
+
+  <main>
+    <!--
+      ┌─────────────────────────────────────────────┐
+      │  从这里开始写正文。                          │
+      │  1. 先读 structure-guide.md 判定文档类型     │
+      │  2. 按对应骨架写 <section>（h2 带头）        │
+      │  3. 组件类名见 references/design-system.md  │
+      │  4. 参考来源放最末 <section id="sources">， │
+      │     正文用 <sup>[n]</sup> 上标引用并链接到   │
+      │     <a href="#src-n">，来源项 id="src-n"    │
+      │  5. 速查表搜索框吸顶：<div class="sticky-toolbar"> │
+      │     <input class="search-box" data-filter-target=".card"></div> │
+      │  6. 决策页用 .quiz 小测（选完自动给结论）： │
+      │     <div class="quiz" data-a="Node" data-b="Deno"> │
+      │       <div class="quiz-q"><p class="quiz-q-text">题</p> │
+      │       <label><input type="radio" name="q1" value="a">A</label> │
+      │       <label><input type="radio" name="q1" value="b">B</label></div> │
+      │       <button class="quiz-btn">看结果</button> │
+      │       <div class="quiz-result"></div></div>  │
+      │  7. hero 跳转条：<div class="jumps">          │
+      │     <a class="jump" href="#conclusion">直接看结论 →</a> │
+      │     <a class="jump ghost" href="#compare">对比表</a></div> │
+      └─────────────────────────────────────────────┘
+    -->
+  </main>
+</div>
+
+<footer>
+  由 html-guide 生成 · 信息以正文标注的参考来源为准
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ 主题切换（浅色 / 深色 / 跟随系统）============ */
+  var KEY = "html-guide-theme";
+  var states = ["light", "dark", "auto"];
+  var icons = { light: "☀️", dark: "🌙", auto: "🌓" };
+  var toggle = document.getElementById("themeToggle");
+  function applyTheme(t){
+    var root = document.documentElement;
+    if (t === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", t);
+    if (toggle) toggle.textContent = icons[t] || "🌓";
+    try { localStorage.setItem(KEY, t); } catch (e) {}
+  }
+  function initTheme(){
+    var saved = "auto";
+    try { saved = localStorage.getItem(KEY) || "auto"; } catch (e) {}
+    applyTheme(saved);
+  }
+  if (toggle){
+    initTheme();
+    toggle.addEventListener("click", function(){
+      var cur = document.documentElement.getAttribute("data-theme") || "auto";
+      var next = states[(states.indexOf(cur) + 1) % states.length];
+      applyTheme(next);
+    });
+  }
+  var printBtn = document.getElementById("printBtn");
+  if (printBtn){
+    printBtn.addEventListener("click", function(){ window.print(); });
+  }
+  // 回到顶部：滚动超过一屏后出现，点击平滑回顶
+  var toTop = document.getElementById("toTop");
+  if (toTop){
+    window.addEventListener("scroll", function(){
+      toTop.classList.toggle("show", window.scrollY > 600);
+    }, { passive: true });
+    toTop.addEventListener("click", function(){
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  /* ============ 自动生成两级目录 + 滚动高亮 ============ */
+  var main = document.querySelector("main");
+  var toc = document.getElementById("toc");
+  var usedIds = {};
+  function slugify(text){
+    var s = text.trim().toLowerCase().replace(/[^\w一-龥]+/g, "-").replace(/^-+|-+$/g, "");
+    return s || "sec";
+  }
+  function ensureId(el){
+    if (el.id && !usedIds[el.id]) { usedIds[el.id] = 1; return el.id; }
+    var base = slugify(el.textContent);
+    var id = base, i = 1;
+    while (usedIds[id]) { i++; id = base + "-" + i; }
+    usedIds[id] = 1; el.id = id; return id;
+  }
+  function buildToc(){
+    if (!toc || !main) return;
+    var h2s = main.querySelectorAll("h2");
+    if (!h2s.length) { toc.style.display = "none"; return; }
+    var top = document.createElement("ul");
+    var items = [];  // {a, el, subs:[{a, el}]}
+    h2s.forEach(function(h2, idx){
+      var id = ensureId(h2);
+      var li = document.createElement("li");
+      var a = document.createElement("a");
+      a.href = "#" + id; a.textContent = h2.textContent; a.dataset.idx = idx;
+      li.appendChild(a);
+      // 找属于本 h2 的 h3（注意：直接保存元素引用，不要用 querySelector 反查 id，
+      // 中文/特殊字符 id 会被 percent-encode，querySelector 会抛 SyntaxError）
+      var subs = [];
+      var node = h2.nextElementSibling;
+      while (node){
+        if (node.tagName === "H2") break;
+        if (node.tagName === "H3"){
+          var sid = ensureId(node);
+          var sli = document.createElement("li");
+          var sa = document.createElement("a");
+          sa.href = "#" + sid; sa.textContent = node.textContent; sa.className = "lvl2";
+          sli.appendChild(sa); subs.push({ a: sa, el: node });
+        }
+        node = node.nextElementSibling;
+      }
+      if (subs.length){
+        var ul = document.createElement("ul");
+        subs.forEach(function(s){ ul.appendChild(s.a.parentNode); });
+        li.appendChild(ul);
+      }
+      top.appendChild(li);
+      items.push({ a: a, el: h2, subs: subs });
+    });
+    toc.appendChild(top);
+
+    // 滚动高亮：直接使用保存的标题元素计算位置
+    var track = [];
+    items.forEach(function(it, idx){
+      track.push({ top: it.el.offsetTop, item: idx, sub: -1 });
+      it.subs.forEach(function(s, si){ track.push({ top: s.el.offsetTop, item: idx, sub: si }); });
+    });
+    function onScroll(){
+      var pos = window.scrollY + 120, cur = -1;
+      for (var i = 0; i < track.length; i++){
+        if (track[i].top <= pos) cur = i;
+      }
+      if (cur < 0) return;
+      var active = track[cur];
+      items.forEach(function(it, idx){
+        var isH2 = (active.item === idx && active.sub === -1);
+        var isSub = (active.item === idx && active.sub >= 0);
+        it.a.classList.toggle("active", isH2);
+        it.subs.forEach(function(s, si){ s.a.classList.toggle("active", isSub && si === active.sub); });
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  }
+  buildToc();
+
+  /* ============ 语法高亮（内嵌轻量 tokenizer）============ */
+  var KEYWORDS = {
+    python: "def class return import from if elif else for while try except finally with as in not and or lambda None True False yield async await raise pass break continue global nonlocal del assert self".split(" "),
+    javascript: "const let var function return import export from default class new if else for while do switch case break continue async await try catch finally throw typeof instanceof in of this true false null undefined yield static extends super".split(" "),
+    typescript: "interface type enum implements extends public private protected readonly abstract static as keyof satisfies unknown any never const let var function return import export from new if else for while switch case break continue async await try catch throw typeof in of this true false null undefined".split(" "),
+    bash: "echo cd ls cp mv rm mkdir touch cat grep sed awk find chmod chown curl wget sudo apt yum brew npm pip git export if then else fi for while done function local return exit true false".split(" "),
+    sql: "select insert update delete from where group by order having join left right inner outer on and or not like in between as union distinct limit offset create alter drop table index view set values".split(" "),
+    css: "media keyframes import".split(" "),
+    json: [], yaml: [], html: []
+  };
+  var BUILTINS = {
+    python: "print len range type str int float list dict set tuple open input enumerate zip map filter sorted sum min max abs round isinstance issubclass super property classmethod staticmethod repr bool any all format id object vars hasattr getattr setattr".split(" ")
+  };
+  function tokenize(src, lang){
+    var tokens = [];
+    var i = 0, n = src.length;
+    var kwSet = {}; (KEYWORDS[lang] || []).forEach(function(k){ kwSet[k] = 1; });
+    var biSet = {}; (BUILTINS[lang] || []).forEach(function(k){ biSet[k] = 1; });
+    function push(t, s){ if (s) tokens.push([t, s]); }
+    function isLineComment(){
+      if (lang === "python" || lang === "yaml") return src[i] === "#";
+      if (lang === "bash") return src[i] === "#";
+      if (lang === "javascript" || lang === "typescript" || lang === "css") return src[i] === "/" && src[i+1] === "/";
+      return false;
+    }
+    while (i < n){
+      var ch = src[i];
+      if (isLineComment()){
+        var j = src.indexOf("\n", i); if (j === -1) j = n;
+        push("comment", src.slice(i, j)); i = j; continue;
+      }
+      if (ch === "/" && src[i+1] === "*"){ /* 块注释 */
+        var j = src.indexOf("*/", i + 2); j = (j === -1) ? n : j + 2;
+        push("comment", src.slice(i, j)); i = j; continue;
+      }
+      if (ch === "<" && src.slice(i, i+4) === "<!--"){
+        var j = src.indexOf("-->", i + 4); j = (j === -1) ? n : j + 3;
+        push("comment", src.slice(i, j)); i = j; continue;
+      }
+      if (ch === "\"" || ch === "'" || ch === "`"){
+        var triple = src.slice(i, i + 3);
+        if ((triple === "\"\"\"" || triple === "'''") && (lang === "python")){
+          var e = src.indexOf(triple, i + 3); e = (e === -1) ? n : e + 3;
+          push("string", src.slice(i, e)); i = e; continue;
+        }
+        var j = i + 1, esc = false;
+        while (j < n){
+          var c = src[j];
+          if (c === "\\" && !esc) { esc = true; }
+          else { if (c === ch && !esc) { j++; break; } esc = false; }
+          j++;
+        }
+        push("string", src.slice(i, j)); i = j; continue;
+      }
+      if (/[0-9]/.test(ch) || (ch === "." && /[0-9]/.test(src[i+1] || ""))){
+        var j = i; while (j < n && /[0-9a-zA-Z_.]/.test(src[j])) j++;
+        push("number", src.slice(i, j)); i = j; continue;
+      }
+      if (/[A-Za-z_$]/.test(ch)){
+        var j = i; while (j < n && /[A-Za-z0-9_$]/.test(src[j])) j++;
+        var word = src.slice(i, j);
+        if (kwSet[word]) push("keyword", word);
+        else if (j < n && src[j] === "(") push("function", word);
+        else if (biSet[word]) push("builtin", word);
+        else if ((lang === "typescript" || lang === "python") && word[0] === word[0].toUpperCase() && word !== word.toLowerCase() && /^[A-Z]/.test(word)) push("type", word);
+        else push("text", word);
+        i = j; continue;
+      }
+      push("text", ch); i++;
+    }
+    return tokens;
+  }
+  function escapeHtml(s){
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  document.querySelectorAll("pre code").forEach(function(code){
+    var m = (code.className.match(/lang-([\w-]+)/) || []);
+    var lang = m[1] || "";
+    if (lang){
+      var tokens = tokenize(code.textContent, lang);
+      var html = "";
+      tokens.forEach(function(t){
+        if (t[0] === "text") html += escapeHtml(t[1]);
+        else html += '<span class="tok-' + t[0] + '">' + escapeHtml(t[1]) + "</span>";
+      });
+      if (html) code.innerHTML = html;
+    }
+  });
+
+  /* ============ 代码块：语言标签 + 复制按钮 ============ */
+  document.querySelectorAll("pre").forEach(function(pre){
+    var code = pre.querySelector("code");
+    if (!code) return;
+    var cls = (code.className.match(/lang-(\w+)/) || [])[1];
+    if (cls) {
+      var tag = document.createElement("span");
+      tag.className = "lang-tag"; tag.textContent = cls;
+      pre.appendChild(tag);
+    }
+    var btn = document.createElement("button");
+    btn.className = "copy-btn"; btn.textContent = "复制";
+    btn.setAttribute("aria-label", "复制代码");
+    btn.addEventListener("click", function(){
+      var text = code.textContent;
+      var done = function(){ btn.textContent = "已复制 ✓"; btn.classList.add("copied"); setTimeout(function(){ btn.textContent = "复制"; btn.classList.remove("copied"); }, 1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+      } else { fallbackCopy(text); done(); }
+    });
+    function fallbackCopy(text){
+      var ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    pre.appendChild(btn);
+  });
+
+  /* ============ Tab 切换 ============ */
+  document.querySelectorAll(".tab-bar").forEach(function(bar){
+    var tabs = bar.querySelectorAll(".tab");
+    var panels = bar.parentNode.querySelectorAll(".tab-panel");
+    tabs.forEach(function(tab, i){
+      tab.addEventListener("click", function(){
+        tabs.forEach(function(t){ t.classList.remove("active"); t.setAttribute("aria-selected", "false"); });
+        panels.forEach(function(p){ p.classList.remove("active"); });
+        tab.classList.add("active"); tab.setAttribute("aria-selected", "true");
+        panels[i].classList.add("active");
+      });
+    });
+  });
+
+  /* ============ 决策小测（选择后自动给结论）============ */
+  document.querySelectorAll(".quiz").forEach(function(quiz){
+    var btn = quiz.querySelector(".quiz-btn");
+    var result = quiz.querySelector(".quiz-result");
+    if (!btn || !result) return;
+    var nameA = quiz.getAttribute("data-a") || "方案 A";
+    var nameB = quiz.getAttribute("data-b") || "方案 B";
+    btn.addEventListener("click", function(){
+      var a = 0, b = 0, missing = 0;
+      quiz.querySelectorAll(".quiz-q").forEach(function(q){
+        var sel = q.querySelector('input[type="radio"]:checked');
+        if (!sel) { missing++; return; }
+        if (sel.value === "a") a++; else if (sel.value === "b") b++;
+      });
+      if (missing){
+        result.textContent = "还有 " + missing + " 道题没选，请完成全部题目后再看结果。";
+        result.classList.add("show"); return;
+      }
+      var total = a + b, pctA = total ? Math.round(a / total * 100) : 0, pctB = 100 - pctA;
+      var win = pctA > pctB ? nameA : (pctB > pctA ? nameB : "两者相当，按具体场景决定");
+      result.textContent = "结果：" + win + "（" + nameA + " " + pctA + "% / " + nameB + " " + pctB + "%）";
+      result.classList.add("show");
+    });
+  });
+
+  /* ============ 速查表过滤 ============ */
+  document.querySelectorAll(".search-box").forEach(function(input){
+    var targetSel = input.getAttribute("data-filter-target") || ".card";
+    input.addEventListener("input", function(){
+      var q = input.value.trim().toLowerCase();
+      document.querySelectorAll(targetSel).forEach(function(el){
+        el.style.display = (!q || el.textContent.toLowerCase().indexOf(q) !== -1) ? "" : "none";
+      });
+    });
+  });
+
+  /* ============ 吸顶工具栏兜底 ============
+     某些页面里 position:sticky 会静默失效（无规律），此时把工具栏转 fixed 钉在视口顶。
+     sticky 正常工作时 toolbar 顶部恒为 0，本逻辑不会触发；sticky 失效时顶部转负 → 转 fixed。 */
+  document.querySelectorAll(".sticky-toolbar").forEach(function(tb){
+    var main = tb.closest("main") || tb.parentElement;
+    var pinned = false;
+    function update(){
+      if (tb.getBoundingClientRect().top < -6 && !pinned){
+        var m = main.getBoundingClientRect();
+        tb.style.position = "fixed"; tb.style.top = "0";
+        tb.style.left = m.left + "px"; tb.style.width = m.width + "px";
+        tb.style.zIndex = "90"; tb.style.marginBottom = "0";
+        pinned = true;
+      } else if (pinned && tb.getBoundingClientRect().top > 2){
+        tb.style.position = ""; tb.style.top = ""; tb.style.left = "";
+        tb.style.width = ""; tb.style.zIndex = ""; tb.style.marginBottom = "";
+        pinned = false;
+      }
+    }
+    window.addEventListener("scroll", update, { passive: true });
+    update();
+  });
+})();
+</script>
+</body>
+</html>
