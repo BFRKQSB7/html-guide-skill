@@ -4,7 +4,9 @@
   ===================
   使用方式：复制本文件为最终输出名，然后在 <main> 内按 structure-guide.md 判定的
   章节结构撰写正文。CSS/JS 全部内联，不得引用任何外部资源。
-  骨架已内置：自动生成两级目录、语法高亮、深浅色切换、代码复制、Tab、速查过滤。
+  骨架已内置：自动生成两级目录、语法高亮、深浅色切换、代码复制（自动剔除 $ 提示符）、
+  Tab、速查过滤、Ctrl+K 章节跳转、阅读时长估算、标题锚点、顶部进度条、跳到正文。
+  可选组件：<pre class="linenos"> 行号、<details class="fold"> 折叠、.em 中文着重号。
   组件类名与 references/design-system.md 一一对应。写完后跑 scripts/check_html.py。
 -->
 <html lang="zh-CN">
@@ -73,8 +75,33 @@
   h2{font-size:1.5rem; margin-top:calc(var(--space) + .5rem); scroll-margin-top:96px}
   h3{font-size:1.2rem; margin-top:2.2rem}
   p{margin:.6em 0 1em}
-  a{color:var(--link); text-decoration:none}
-  a:hover{text-decoration:underline}
+  /* 正文链接默认加下划线（WCAG 1.4.1 禁止仅靠颜色区分链接）；交互组件类链接单独去下划线 */
+  a{color:var(--link); text-decoration:underline; text-underline-offset:3px; text-decoration-thickness:1px}
+  a:hover{text-decoration-thickness:2px}
+  #toc a,.jump,.card a,.kbar-list a,sup a{text-decoration:none}
+  #toc a:hover,.jump:hover,.card a:hover,.kbar-list a:hover,sup a:hover{text-decoration:none}
+  /* 键盘焦点环（WCAG 2.4.7 / 2.4.13）；鼠标点击不显示环 */
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  :focus:not(:focus-visible){outline:none}
+  /* 减弱动效（WCAG 2.3.3） */
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto}
+    *,*::before,*::after{animation:none !important; transition:none !important; scroll-behavior:auto !important}
+  }
+  /* 深浅色切换过渡：仅在切换瞬间（JS 加上 .theme-switching 的 ~0.4s）生效，
+     平时不开启，避免 hover 等常规状态也变慢；尊重减弱动效 */
+  @media (prefers-reduced-motion: no-preference){
+    html.theme-switching, html.theme-switching *{
+      transition: background-color .3s ease, color .3s ease, border-color .3s ease !important;
+    }
+  }
+  /* 屏幕阅读器专用文本（不占布局） */
+  .visually-hidden{position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
+  /* 中文着重号（W3C CLREQ §5.3.1：强调用点，不用粗体/斜体） */
+  .em{text-emphasis:dot; -webkit-text-emphasis:dot; text-emphasis-position:under; -webkit-text-emphasis-position:under}
+  /* 标题 hover 锚点链接（深链；JS 自动加） */
+  .plink{opacity:0; text-decoration:none; color:var(--text-3); font-size:.8em; font-weight:400; margin-left:.3em}
+  h2:hover .plink,h3:hover .plink,.plink:focus-visible{opacity:1}
   code{font-family:"JetBrains Mono","Cascadia Code",Consolas,"Liberation Mono","Courier New",monospace; font-size:.9em}
   /* 行内代码强调：文件名/命令/变量 —— 粗体 + 主色，比普通 code 更醒目 */
   p code,li code,td code{
@@ -101,6 +128,11 @@
   }
   .hero .subtitle{color:var(--text-2); max-width:40rem; margin:0 auto 1.2rem; font-size:1.1rem}
   .hero .meta{color:var(--text-3); font-size:.9rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; align-items:center}
+
+  /* 跳到正文（键盘用户；WebAIM 要求，页面第一个可聚焦元素） */
+  .skip-link{position:fixed; top:-100px; left:1rem; z-index:200; padding:.5rem 1rem; background:var(--accent); color:#fff; border-radius:var(--radius-sm); font-weight:600; box-shadow:var(--shadow-lg); text-decoration:none}
+  .skip-link:focus{top:1rem; text-decoration:none}
+  .skip-link:focus-visible{outline:2px solid #fff; outline-offset:2px}
 
   /* 主题切换按钮（吸顶右上角） */
   .theme-toggle{
@@ -130,6 +162,9 @@
   }
   .to-top.show{opacity:1; pointer-events:auto; transform:none}
   .to-top:hover{border-color:var(--accent); color:var(--accent)}
+
+  /* 阅读进度条（顶部细条，装饰性；JS 自动更新，aria-hidden） */
+  .progress{position:fixed; top:0; left:0; height:3px; width:0; background:linear-gradient(90deg,var(--accent),var(--accent-2)); z-index:300; will-change:width}
 
   /* ============ 布局 ============ */
   .layout{display:flex; gap:2.5rem; max-width:76rem; margin:0 auto; padding:var(--space) 1.5rem}
@@ -176,6 +211,16 @@
   }
   .step-result::before{content:"✅ 预期结果："; font-weight:650}
 
+  /* ============ 组件：渐进披露折叠（原生 <details>，零 JS、键盘天然可达）============ */
+  details.fold{border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); margin:1.2em 0; overflow:hidden}
+  details.fold > summary{cursor:pointer; padding:.8rem 1.1rem; font-weight:650; list-style:none; display:flex; align-items:center; gap:.5rem; color:var(--text); user-select:none}
+  details.fold > summary::-webkit-details-marker{display:none}
+  details.fold > summary::before{content:"▸"; color:var(--accent); transition:transform .18s; font-size:.85em}
+  details.fold[open] > summary::before{transform:rotate(90deg)}
+  details.fold[open] > summary{border-bottom:1px solid var(--border)}
+  details.fold[open]{border-left:3px solid var(--accent)}
+  details.fold .fold-body{padding:.2rem 1.1rem 1rem; color:var(--text-2)}
+
   /* ============ 组件：代码块 + 语法高亮 ============ */
   pre{
     position:relative; background:var(--code-bg); color:var(--code-ink);
@@ -198,6 +243,11 @@
   .copy-btn:hover{background:rgba(255,255,255,.16)}
   .copy-btn.copied{background:rgba(52,211,153,.25); border-color:rgba(52,211,153,.4)}
   .lang-tag{position:absolute; top:.5rem; right:3.4rem; color:rgba(226,232,240,.55); font-size:.75rem}
+  /* 代码行号（作者在 <pre> 加 class="linenos" 才启用；复制自动不含行号，gutter 对屏幕阅读器隐藏） */
+  pre.linenos{display:flex; padding:0; overflow:visible}
+  pre.linenos > .ln-gutter{flex:none; width:2.8rem; background:rgba(255,255,255,.05); border-right:1px solid rgba(255,255,255,.12); padding:1rem 0; text-align:right; color:rgba(226,232,240,.4); font-size:.9rem; line-height:1.6; user-select:none; -webkit-user-select:none}
+  pre.linenos > .ln-gutter > div{height:1.6em; padding-right:.5rem}
+  pre.linenos > code{flex:1; min-width:0; overflow-x:auto; padding:1rem 3rem 1rem 1rem}
 
   /* ============ 组件：表格（彩色表头 + 支持/不支持标签）============ */
   .table-wrap{overflow-x:auto; margin:1.2em 0; border:1px solid var(--border); border-radius:var(--radius)}
@@ -284,6 +334,7 @@
   }
   .search-box::placeholder{color:var(--text-3)}
   .search-box:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft)}
+  .search-box:focus-visible{outline:none}  /* 用上面的 box-shadow 环，避免双重描边 */
 
   /* ============ 组件：快速跳转按钮（hero 用）============ */
   .jumps{display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin-top:1rem}
@@ -315,6 +366,18 @@
   .sources li{margin:.4em 0; color:var(--text-2); font-size:.95rem}
   .sources li:target{background:var(--accent-soft); border-radius:var(--radius-sm); padding:.2em .4em}
 
+  /* ============ 页内快速跳转（Ctrl+K / Cmd+K 打开；键盘优先）============ */
+  .kbar{position:fixed; inset:0; z-index:400; display:flex; align-items:flex-start; justify-content:center; padding-top:12vh; background:rgba(15,23,42,.45); backdrop-filter:blur(2px)}
+  .kbar[hidden]{display:none !important}
+  .kbar-box{width:min(34rem, calc(100vw - 2rem)); background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); overflow:hidden}
+  .kbar-input{width:100%; border:0; background:transparent; color:var(--text); font:inherit; font-size:1rem; padding:1rem 1.1rem; outline:none; border-bottom:1px solid var(--border)}
+  .kbar-input:focus-visible{outline:none}
+  .kbar-list{list-style:none; margin:0; padding:.4rem; max-height:50vh; overflow:auto}
+  .kbar-list a{display:block; padding:.5rem .8rem; border-radius:var(--radius-sm); color:var(--text-2)}
+  .kbar-list a:hover{background:var(--surface-2)}
+  .kbar-list a.kbar-sel{background:var(--accent-soft); color:var(--accent)}
+  .kbar-list .kbar-lvl2{padding-left:2rem; font-size:.92rem}
+
   /* ============ 页脚 ============ */
   footer{border-top:1px solid var(--border); margin-top:var(--space); padding:1.5rem; text-align:center; color:var(--text-3); font-size:.85rem}
 
@@ -332,6 +395,12 @@
     section{scroll-margin-top:0}
     .step,.callout,.card{border-color:#bbb; box-shadow:none; break-inside:avoid}
     th,td{border-color:#bbb}
+    /* 打印/PDF：隐藏跳转/进度条/锚点/行号，折叠内容强制展开 */
+    .skip-link,.progress,.kbar,.plink,.ln-gutter{display:none !important}
+    pre.linenos{display:block}
+    pre.linenos > code{padding:1rem}
+    details.fold > summary::before{display:none}
+    details.fold > .fold-body{display:block !important}
   }
 
   /* ============ 响应式 ============ */
@@ -341,17 +410,22 @@
     #toc a{display:inline-block; margin:.1rem .2rem}
     #toc .lvl2{display:none}  /* 小屏只留一级目录 */
     .hero{padding-top:3.5rem} /* 给主题按钮留出空间 */
+    .kbar{padding-top:6vh}
   }
 </style>
 </head>
 <body>
+
+<a class="skip-link" href="#main">跳到正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
 
 <header class="hero">
   <h1>页面主标题</h1>
   <p class="subtitle">一句话说清：这份文档教你/讲什么，适用对象与前提。</p>
   <div class="meta">
     <span>📅 2026-08-04</span>
-    <span>🕐 约 X 分钟阅读</span>
+    <!-- 🕐 阅读时长由 JS 按正文长度自动估算（id=readTime 占位） -->
+    <span id="readTime">🕐 约 X 分钟阅读</span>
     <!-- 椭圆/胶囊标签 .badge = 文章类别（教程/指南/速查/讲解/选型） -->
     <span class="badge">教程</span>
     <!-- 方形圆角标签 .chip = 涉及的技术/关键词（放 hero 元信息里也用 .chip） -->
@@ -367,7 +441,7 @@
   <!-- 目录由 JS 从 main 内的 h2/h3 自动生成（缺失 id 也会自动补） -->
   <nav id="toc" aria-label="目录"></nav>
 
-  <main>
+  <main id="main">
     <!--
       ┌─────────────────────────────────────────────┐
       │  从这里开始写正文。                          │
@@ -389,9 +463,21 @@
       │  7. hero 跳转条：<div class="jumps">          │
       │     <a class="jump" href="#conclusion">直接看结论 →</a> │
       │     <a class="jump ghost" href="#compare">对比表</a></div> │
+      │  自动能力（无需手写）：Ctrl+K/Cmd+K 章节跳转、│
+      │    阅读时长自动估算、hover 标题锚点 ¶、顶部进度条│
+      │  可选组件：<details class="fold">…</details>   │
+      │    折叠「可选步骤/进阶内容」；<pre class="linenos">│
+      │    显示代码行号；中文强调 <span class="em">着重</span>│
       └─────────────────────────────────────────────┘
     -->
   </main>
+</div>
+
+<div class="kbar" id="kbar" hidden>
+  <div class="kbar-box" role="dialog" aria-modal="true" aria-label="快速跳转章节">
+    <input class="kbar-input" id="kbarInput" type="text" placeholder="搜索章节标题…（↑↓ 选择 · Enter 跳转 · Esc 关闭）" aria-label="搜索章节标题">
+    <ul class="kbar-list" id="kbarList"></ul>
+  </div>
 </div>
 
 <footer>
@@ -404,11 +490,46 @@
 
   /* ============ 主题切换（浅色 / 深色 / 跟随系统）============ */
   var KEY = "html-guide-theme";
+  function prefersReduced(){ return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
+  /* 复制时剔除 shell 提示符（$ / >）——Prism command-line 的 canonical 做法：
+     装饰性内容不进剪贴板；行注释 # 保留 */
+  function cleanCopy(text, lang){
+    if (lang === "bash" || lang === "sh" || lang === "shell" || lang === "zsh"){
+      return text.split("\n").map(function(line){ return line.replace(/^\s*[$>]\s?/, ""); }).join("\n");
+    }
+    return text;
+  }
   var states = ["light", "dark", "auto"];
   var icons = { light: "☀️", dark: "🌙", auto: "🌓" };
   var toggle = document.getElementById("themeToggle");
-  function applyTheme(t){
+  // 在过渡真正结束后才移除 .theme-switching 类：固定延时中途移除会取消还在跑的过渡，
+  // 导致页面卡在/回到旧主题色（实测：1000ms 过渡在第 400ms 被移除 → 页面回到深色）。
+  var themeSwitchActive = false;
+  function endThemeSwitch(root){
+    if (themeSwitchActive) return;   // 上次切换未结束则复用其监听，避免重复
+    themeSwitchActive = true;
+    var done = false, timer = 0;
+    function finish(){
+      if (done) return; done = true;
+      themeSwitchActive = false;
+      root.classList.remove("theme-switching");
+      root.removeEventListener("transitionend", onEnd);
+    }
+    function onEnd(){
+      clearTimeout(timer);
+      timer = setTimeout(finish, 80);   // 最后一个 transitionend 后 80ms 无新事件 → 全部结束
+    }
+    root.addEventListener("transitionend", onEnd);
+    setTimeout(finish, 1000);   // 兜底：正常过渡 300ms，1s 足够（慢机器也不会被打断）
+  }
+  function applyTheme(t, animate){
     var root = document.documentElement;
+    if (animate){
+      // 只在用户主动切换时播颜色过渡（夜间切浅色不会"啪"地闪白）
+      root.classList.add("theme-switching");
+      void root.offsetHeight;   // 强制重排：提交"切换前"样式，确保过渡从旧值真正开始
+      endThemeSwitch(root);
+    }
     if (t === "auto") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", t);
     if (toggle) toggle.textContent = icons[t] || "🌓";
@@ -417,14 +538,14 @@
   function initTheme(){
     var saved = "auto";
     try { saved = localStorage.getItem(KEY) || "auto"; } catch (e) {}
-    applyTheme(saved);
+    applyTheme(saved, false);   // 初始加载不播过渡，避免打开页面的瞬间闪变
   }
   if (toggle){
     initTheme();
     toggle.addEventListener("click", function(){
       var cur = document.documentElement.getAttribute("data-theme") || "auto";
       var next = states[(states.indexOf(cur) + 1) % states.length];
-      applyTheme(next);
+      applyTheme(next, true);   // 用户点击切换时带过渡
     });
   }
   var printBtn = document.getElementById("printBtn");
@@ -438,7 +559,7 @@
       toTop.classList.toggle("show", window.scrollY > 600);
     }, { passive: true });
     toTop.addEventListener("click", function(){
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: prefersReduced() ? "auto" : "smooth" });
     });
   }
 
@@ -505,19 +626,58 @@
       for (var i = 0; i < track.length; i++){
         if (track[i].top <= pos) cur = i;
       }
-      if (cur < 0) return;
+      if (cur < 0) cur = 0;   // 还没滚到首节时，默认首节激活（页面顶部即高亮第一项）
       var active = track[cur];
       items.forEach(function(it, idx){
         var isH2 = (active.item === idx && active.sub === -1);
         var isSub = (active.item === idx && active.sub >= 0);
         it.a.classList.toggle("active", isH2);
-        it.subs.forEach(function(s, si){ s.a.classList.toggle("active", isSub && si === active.sub); });
+        if (isH2) it.a.setAttribute("aria-current", "true"); else it.a.removeAttribute("aria-current");
+        it.subs.forEach(function(s, si){
+          var on = isSub && si === active.sub;
+          s.a.classList.toggle("active", on);
+          if (on) s.a.setAttribute("aria-current", "true"); else s.a.removeAttribute("aria-current");
+        });
       });
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
   }
   buildToc();
+
+  /* ============ 标题锚点链接（hover 显示 ¶，便于深链；在 buildToc 之后加，避免污染目录文字）============ */
+  document.querySelectorAll("main h2, main h3").forEach(function(h){
+    if (!h.id) return;
+    var plink = document.createElement("a");
+    plink.className = "plink"; plink.href = "#" + h.id; plink.textContent = "¶";
+    plink.setAttribute("aria-label", "链接到此标题"); plink.title = "链接到此标题";
+    h.appendChild(plink);
+  });
+
+  /* ============ 阅读进度条（顶部细条，装饰性，aria-hidden）============ */
+  var progress = document.getElementById("progress");
+  if (progress){
+    function updateProgress(){
+      var doc = document.documentElement;
+      var max = doc.scrollHeight - window.innerHeight;
+      progress.style.width = (max > 0 ? (window.scrollY / max) * 100 : 0) + "%";
+    }
+    window.addEventListener("scroll", updateProgress, { passive: true });
+    window.addEventListener("resize", updateProgress, { passive: true });
+    updateProgress();
+  }
+
+  /* ============ 阅读时长自动估算（CJK ≈350 字/分，拉丁 ≈200 词/分）============ */
+  var readTime = document.getElementById("readTime");
+  if (readTime && main){
+    var text = main.cloneNode(true);
+    text.querySelectorAll("pre, .quiz, .tabs, .kbar").forEach(function(el){ el.remove(); });
+    var t = text.textContent || "";
+    var cjk = (t.match(/[一-鿿]/g) || []).length;
+    var latin = (t.match(/[A-Za-z0-9]+/g) || []).length;
+    var mins = Math.max(1, Math.round(cjk / 350 + latin / 200));
+    readTime.textContent = "🕐 约 " + mins + " 分钟阅读";
+  }
 
   /* ============ 语法高亮（内嵌轻量 tokenizer）============ */
   var KEYWORDS = {
@@ -621,9 +781,15 @@
     var btn = document.createElement("button");
     btn.className = "copy-btn"; btn.textContent = "复制";
     btn.setAttribute("aria-label", "复制代码");
+    // 复制反馈用 aria-live 播报（屏幕阅读器可听到）
+    var status = document.createElement("span");
+    status.className = "copy-status visually-hidden"; status.setAttribute("aria-live", "polite");
+    pre.appendChild(status);
     btn.addEventListener("click", function(){
-      var text = code.textContent;
-      var done = function(){ btn.textContent = "已复制 ✓"; btn.classList.add("copied"); setTimeout(function(){ btn.textContent = "复制"; btn.classList.remove("copied"); }, 1500); };
+      var lang = (code.className.match(/lang-(\w+)/) || [])[1];
+      var text = cleanCopy(code.textContent, lang);
+      var announce = function(){ status.textContent = "已复制"; };
+      var done = function(){ btn.textContent = "已复制 ✓"; btn.classList.add("copied"); announce(); setTimeout(function(){ btn.textContent = "复制"; btn.classList.remove("copied"); }, 1500); };
       if (navigator.clipboard && navigator.clipboard.writeText){
         navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
       } else { fallbackCopy(text); done(); }
@@ -707,6 +873,89 @@
     }
     window.addEventListener("scroll", update, { passive: true });
     update();
+  });
+
+  /* ============ 同页锚点点击统一用 JS 滚动 ============
+     file:// 页面里 <a href="#id"> 的真实跳转会被 Chrome 报
+     "Unsafe attempt to load URL … file: origins are unique" 的 console 错误，
+     部分版本还会导致滚动失效。全局拦截改用 scrollIntoView，彻底绕开导航。 */
+  document.addEventListener("click", function(e){
+    var a = e.target && e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!a) return;
+    var frag = a.getAttribute("href");
+    if (!frag || frag === "#") return;   // href="#" 回顶，走默认行为
+    var id = null;
+    try { id = decodeURIComponent(frag.slice(1)); } catch (err) {}
+    var el = id ? document.getElementById(id) : null;
+    if (!el) return;
+    e.preventDefault();
+    el.scrollIntoView({ behavior: prefersReduced() ? "auto" : "smooth", block: "start" });
+    if (/^H[1-6]$/.test(el.tagName)){ el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
+  });
+
+  /* ============ 页内快速跳转（Ctrl+K / Cmd+K 打开；键盘优先、Esc 关闭、焦点可回收）============ */
+  var kbar = document.getElementById("kbar");
+  if (kbar){
+    var kbarInput = document.getElementById("kbarInput");
+    var kbarList = document.getElementById("kbarList");
+    var index = [];
+    document.querySelectorAll("main h2, main h3").forEach(function(h){
+      index.push({ id: h.id, title: (h.textContent || "").replace(/¶\s*$/, "").trim(), el: h, lvl: h.tagName === "H2" ? 0 : 1 });
+    });
+    var lastFocus = null, sel = 0;
+    function render(q){
+      q = (q || "").trim().toLowerCase();
+      var matches = index.filter(function(h){ return !q || h.title.toLowerCase().indexOf(q) !== -1; }).slice(0, 30);
+      kbarList.innerHTML = "";
+      matches.forEach(function(h, idx){
+        var li = document.createElement("li");
+        var a = document.createElement("a");
+        a.href = "#" + h.id; a.textContent = h.title;
+        if (h.lvl) a.className = "kbar-lvl2";
+        if (idx === sel) a.classList.add("kbar-sel");
+        a.addEventListener("click", function(ev){ ev.preventDefault(); jump(h); });
+        li.appendChild(a); kbarList.appendChild(li);
+      });
+      kbar._matches = matches;
+    }
+    function openKbar(){ lastFocus = document.activeElement; sel = 0; kbar.hidden = false; render(""); kbarInput.focus(); }
+    function closeKbar(){ kbar.hidden = true; kbarList.innerHTML = ""; kbar._matches = []; if (lastFocus) lastFocus.focus(); }
+    function jump(h){
+      closeKbar();
+      h.el.scrollIntoView({ behavior: prefersReduced() ? "auto" : "smooth", block: "start" });
+      setTimeout(function(){ h.el.setAttribute("tabindex", "-1"); h.el.focus({ preventScroll: true }); }, prefersReduced() ? 0 : 350);
+    }
+    function move(d){
+      var m = kbar._matches || [];
+      if (!m.length) return;
+      sel = (sel + d + m.length) % m.length;
+      render(kbarInput.value);
+      var cur = kbarList.querySelector(".kbar-sel");
+      if (cur) cur.scrollIntoView({ block: "nearest" });
+    }
+    document.addEventListener("keydown", function(e){
+      if ((e.ctrlKey || e.metaKey) && (e.key === "k" || e.key === "K")){ e.preventDefault(); openKbar(); return; }
+      if (e.key === "Escape" && !kbar.hidden){ e.preventDefault(); closeKbar(); }
+    });
+    kbarInput.addEventListener("input", function(){ render(kbarInput.value); });
+    kbarInput.addEventListener("keydown", function(e){
+      if (e.key === "ArrowDown"){ e.preventDefault(); move(1); }
+      else if (e.key === "ArrowUp"){ e.preventDefault(); move(-1); }
+      else if (e.key === "Enter"){ e.preventDefault(); var m = kbar._matches || []; if (m[sel] || m[0]) jump(m[sel] || m[0]); }
+    });
+    kbar.addEventListener("click", function(e){ if (e.target === kbar) closeKbar(); });  // 点击背景关闭
+    kbar.addEventListener("keydown", function(e){ if (e.key === "Tab"){ e.preventDefault(); kbarInput.focus(); } });  // 简易焦点陷阱
+  }
+
+  /* ============ 代码行号（<pre class="linenos"> 时启用；gutter 对 SR 隐藏、复制不含行号）============ */
+  document.querySelectorAll("pre.linenos > code").forEach(function(code){
+    var n = (code.textContent || "").replace(/\n$/, "").split("\n").length;
+    var gutter = document.createElement("div");
+    gutter.className = "ln-gutter"; gutter.setAttribute("aria-hidden", "true");
+    for (var i = 1; i <= n; i++){
+      var d = document.createElement("div"); d.textContent = i; gutter.appendChild(d);
+    }
+    code.parentNode.insertBefore(gutter, code);
   });
 })();
 </script>

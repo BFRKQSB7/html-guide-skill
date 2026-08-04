@@ -95,7 +95,8 @@ description: >
 1. **读参考**：先读 `references/design-system.md`（视觉规范与组件用法），
    再读 `references/structure-guide.md` 对应类型的章节。两个都读，别跳过。
 2. **用骨架**：以 `assets/skeleton.html` 为起点 —— 它已包含设计令牌、
-   基础 CSS、暗色模式、打印样式、目录/复制/滚动高亮的 JS。**在骨架的 body 内**按
+   基础 CSS、暗色模式、打印样式、目录/复制/滚动高亮、Ctrl+K 章节跳转、阅读时长估算、
+   标题锚点、顶部进度条的 JS。**在骨架的 body 内**按
    Step 2 确定的章节结构撰写正文。骨架是地基，不是不可改 —— 组件都要用
    design-system 里定义的类名，保证风格统一。
 3. **撰写原则**：
@@ -106,7 +107,11 @@ description: >
      同时遵守 `design-system.md §1.5 反 AI 味`——节奏有起伏、颜色有目的、避免模板腔
    - 正文引用写成**可点击上标** `<sup><a href="#src-1">[1]</a></sup>`，来源项带
      `id="src-1"`（点击跳到来源）
-   - 骨架内置了深浅色切换、语法高亮、自动目录、代码复制——**不要删**，这些是页面的标准能力
+   - 骨架内置了深浅色切换、语法高亮、自动目录、代码复制（自动剔除 `$` 提示符）、
+     Ctrl+K 章节跳转、阅读时长估算、标题锚点、顶部进度条、跳到正文——**不要删**，
+     这些是页面的标准能力
+   - 可选组件按需用：`<details class="fold">` 折叠进阶/可选内容、`<pre class="linenos">`
+     显示代码行号、`<span class="em">` 中文着重号（用法见 design-system §4.23–4.28）
    - 全部文字用 `<html lang="...">` 与用户语言一致（默认中文）
    - 文中涉及的技术关键词用 chips 标签组呈现，避免清一色
 4. **命名与保存**：文件名有意义（如 `python-scrapy-tutorial.html`），
@@ -126,7 +131,9 @@ description: >
    修复后重跑直到 0 error。
 2. **结构自检**（不打开浏览器）：通读一遍生成的 HTML，核对——目录锚点与章节 id 一一对应、
    代码复制按钮已由骨架 JS 统一处理、暗色模式有 `prefers-color-scheme` 覆盖、表格外套了
-   `table-wrap`、callout 用的都是语义类名。发现布局隐患当场修复。
+   `table-wrap`、callout 用的都是语义类名。新特性检查：正文链接有下划线、用了
+   `class="linenos"` 的代码块行号与代码行对齐、Ctrl+K 弹层不遮挡正文、折叠的进阶内容
+   在打印时会强制展开。发现布局隐患当场修复。
 3. **无头渲染验证（强烈建议）**：骨架的 JS 功能（语法高亮/目录/复制/Tab/小测）一旦被改写
    很容易悄悄失效（历史教训：`innerText` 依赖布局、`querySelector` 中文 id 会抛错，
    一个 bug 会让整页高亮失灵）。用无头 Chrome 渲染一次并检查关键标记，不弹窗：
@@ -135,6 +142,9 @@ description: >
      --dump-dom "file:///C:/.../output.html" > %TEMP%/dom_check.txt
    grep -c "tok-keyword" %TEMP%/dom_check.txt   # 语法高亮是否真的渲染出来了（应 >0）
    grep -c 'id="toc"' %TEMP%/dom_check.txt      # 目录存在
+   grep -c 'class="plink"' %TEMP%/dom_check.txt # 标题锚点已由 JS 生成（应 >0）
+   grep -c 'aria-current="true"' %TEMP%/dom_check.txt  # 目录活动项（应 >0）
+   grep -c 'class="ln-gutter"' %TEMP%/dom_check.txt    # 行号 gutter（用了 .linenos 时 >0）
    ```
    没有 Chrome 或 headless 不可用则跳过，但至少用 `scripts/check_html.py` 兜底。
 4. **清理临时文件（必做）**：无头验证产生的 `dom*.txt` 等临时文件**只放临时目录**，

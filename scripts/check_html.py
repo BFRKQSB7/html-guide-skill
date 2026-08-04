@@ -90,6 +90,24 @@ def check(path):
     if not re.search(r"step-result", src):
         warn("缺少 `.step-result` 预期结果块样式（教程类页面建议使用）")
 
+    # ---- 可访问性与新组件（骨架默认内置；缺失说明偏离了骨架）----
+    if "skip-link" not in src:
+        warn("缺少 skip-to-content 跳转链接 `skip-link`（键盘可访问性）")
+    if ":focus-visible" not in src:
+        warn("缺少 `:focus-visible` 键盘焦点环（WCAG 2.4.7）")
+    if "prefers-reduced-motion" not in src:
+        warn("缺少 `prefers-reduced-motion` 减弱动效适配（WCAG 2.3.3）")
+    if "aria-current" not in src:
+        warn("缺少 `aria-current`（目录活动项，屏幕阅读器导航）")
+    if 'id="progress"' not in src:
+        warn("缺少阅读进度条 `#progress`（顶部进度条）")
+    if 'id="readTime"' not in src:
+        warn("缺少阅读时长占位 `#readTime`（JS 自动估算）")
+    if 'id="kbar"' not in src:
+        warn("缺少页内快速跳转 `#kbar`（Ctrl+K）")
+    if "plink" not in src:
+        warn("缺少标题锚点链接（.plink hover ¶）")
+
     # 代码块必须带 lang- 类（否则语法高亮不生效）——只查 <pre><code>，不误报行内 <code>
     pre_code_blocks = re.findall(r"<pre[^>]*>\s*<code[^>]*>", src)
     missing_lang = [c for c in pre_code_blocks if "lang-" not in c]
