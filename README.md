@@ -35,12 +35,25 @@
 
 ## 安装
 
-把 `html-guide` 文件夹放进你的 Claude Code skills 目录：
+> 本仓库**根目录就是 skill 本体**（`SKILL.md` 在仓库根下），所以 Releases 页的 **Source code (zip)** 就是完整的 skill 安装包——直接用它即可，页面无需再找单独的 zip 资产。
 
-- **Windows**: `C:\Users\NYRO\.claude\skills\html-guide`
-- **macOS / Linux**: `~/.claude/skills/html-guide`
+### 从 Releases 安装
 
-（也可在 Claude Code 里用 `/plugin` 或 `/install-github-repo` 从本仓库安装。）
+1. 打开 [Releases](https://github.com/BFRKQSB7/html-guide-skill/releases)，选最新版本
+2. 下载 **Source code (zip)**（GitHub 对每个版本自动生成，内容即该版本的全部 skill 文件）
+3. 解压 → 把解压出的文件夹放到 skills 目录（**目标目录名必须是 `html-guide`**，且里面直接就是 `SKILL.md`）：
+
+| 平台 | 放置位置 |
+|------|---------|
+| Windows | `C:\Users\NYRO\.claude\skills\html-guide` |
+| macOS / Linux | `~/.claude/skills/html-guide` |
+
+### 其他安装方式
+
+- 直接复制仓库的 `SKILL.md` + `references/` + `assets/` + `scripts/` + `evals/` 到 `~/.claude/skills/html-guide/`
+- 或在 Claude Code 里用 `/plugin` 或 `/install-github-repo` 从本仓库安装
+
+安装后重启 Claude Code，"把这段内容做成 HTML" 即可触发。
 
 ## 触发方式
 
