@@ -508,6 +508,48 @@
 - 图上方/下方配一句说明：指标名 + 量表 + 「越高越好/越低越好」（如「AA 智能指数 v4.1，越高越好」）
 - 有得分数据时**图表 + 明细表一起给**：柱状图负责直观，明细表（真实数字 + 缺项 `—` + 厂商自报标注）负责完整可查
 
+### 4.30 饼图 / 环形图（纯 CSS conic-gradient）
+
+**占比 / 构成**数据（厂商份额、难度分布、测试集占比）用环形图呈现"部分占整体"，比柱状图更贴切。纯 CSS（`conic-gradient`）、无 JS、无外部库，深浅色与打印都适配。
+
+**单指标环**（一个值占整体的百分比，如通过率 73%）：
+
+```html
+<div class="donut-chart">
+  <div class="donut" style="--v:73">
+    <span class="donut-center"><b>73%</b><span>通过率</span></span>
+  </div>
+  <p>旁注：指标名 + 口径。</p>
+</div>
+```
+
+- `--v` = 完成百分比（0–100）；`--dc` 可覆盖填充色（默认主色）
+- 中心 `.donut-center` 放数值（`<b>`）+ 单位/标签（`<span>`）
+
+**多段环**（若干占比，加总 ≈ 100）+ **图例**：
+
+```html
+<div class="donut-chart">
+  <div class="donut pie" style="--a1:40; --a2:35; --a3:25">
+    <span class="donut-center"><b>100</b><span>模型数</span></span>
+  </div>
+  <div class="donut-legend">
+    <div class="dl-row"><span class="dl-dot" style="background:var(--accent)"></span><span class="dl-name">Claude 系</span><span class="dl-val">40%</span></div>
+    <div class="dl-row"><span class="dl-dot" style="background:var(--accent-2)"></span><span class="dl-name">OpenAI 系</span><span class="dl-val">35%</span></div>
+    <div class="dl-row"><span class="dl-dot" style="background:#d97706"></span><span class="dl-name">其他</span><span class="dl-val">25%</span></div>
+  </div>
+</div>
+```
+
+- `--a1`..`--a5` = 各段占比（缺省 0，加总 ≈ 100）；`--c1`..`--c5` 可覆盖各段颜色（默认依次为主色 / 次强调 / amber / sky / violet 语义色）
+- 图例 `.dl-row` 的色点背景与对应段颜色保持一致；数值用 `.dl-val`
+- 环固定 7.5rem；图例在右侧并排、小屏自动换行
+- 图上方/下方配一句说明：指标名 + 口径；分布数据同样可用明细表兜底
+
+**打印**：conic-gradient 属于背景，默认不打印——骨架已对 `.donut` 加 `print-color-adjust:exact`，段与轨道都会保留。
+
+选择：环形图服务于**占比/构成**，柱状图（§4.29）服务于**高低排序**——按数据关系选，别混用；占比相加要对得上 100%（或明确标注其余为「其他」）。
+
 ---
 
 ## 5. 图标

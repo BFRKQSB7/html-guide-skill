@@ -271,6 +271,34 @@
   .bc-fill{display:block; height:100%; width:var(--v); background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:999px}
   .bc-val{color:var(--text); font-weight:650; font-variant-numeric:tabular-nums}
 
+  /* ============ 组件：饼图/环形图（纯 CSS conic-gradient 自包含；分布/占比数据用）============ */
+  /* 容器：环形图 + 图例并排，小屏自动换行 */
+  .donut-chart{display:flex; flex-wrap:wrap; align-items:center; gap:1.5rem; margin:1.4em 0}
+  /* 单指标环：--v 为完成百分比（0–100），--dc 可覆盖填充色 */
+  .donut{--v:0; --dc:var(--accent); position:relative; flex:none;
+    display:flex; align-items:center; justify-content:center;
+    width:7.5rem; height:7.5rem; border-radius:50%;
+    background:conic-gradient(var(--dc) calc(var(--v)*1%), var(--bg-soft) 0)}
+  .donut::before{content:""; position:absolute; inset:24%; border-radius:50%; background:var(--bg)}
+  .donut-center{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; line-height:1.15}
+  .donut-center b{font-size:1.3rem; font-variant-numeric:tabular-nums; color:var(--text)}
+  .donut-center span{font-size:.7rem; color:var(--text-3)}
+  /* 多段环：--a1..--a5 各段占比（相加≈100，缺省为 0）；--c1..--c5 各段颜色（默认语义色，可覆盖） */
+  .donut.pie{--a1:0; --a2:0; --a3:0; --a4:0; --a5:0;
+    --c1:var(--accent); --c2:var(--accent-2); --c3:#d97706; --c4:#0284c7; --c5:#7c3aed;
+    background:conic-gradient(
+      var(--c1) 0 calc(var(--a1)*1%),
+      var(--c2) calc(var(--a1)*1%) calc((var(--a1) + var(--a2))*1%),
+      var(--c3) calc((var(--a1) + var(--a2))*1%) calc((var(--a1) + var(--a2) + var(--a3))*1%),
+      var(--c4) calc((var(--a1) + var(--a2) + var(--a3))*1%) calc((var(--a1) + var(--a2) + var(--a3) + var(--a4))*1%),
+      var(--c5) calc((var(--a1) + var(--a2) + var(--a3) + var(--a4))*1%) 100%)}
+  /* 图例：与多段环配对，每行 = 色点 + 名称 + 数值 */
+  .donut-legend{display:flex; flex-direction:column; gap:.4rem; font-size:.92rem; min-width:min(17rem,62vw)}
+  .dl-row{display:flex; align-items:baseline; gap:.5rem}
+  .dl-dot{flex:none; width:.68rem; height:.68rem; border-radius:50%; background:var(--accent); transform:translateY(.08em)}
+  .dl-name{flex:1; color:var(--text-2)}
+  .dl-val{color:var(--text); font-weight:650; font-variant-numeric:tabular-nums}
+
   /* ============ 组件：卡片网格 ============ */
   .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin:1.4em 0}
   .card{position:relative; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); padding:1.1rem; box-shadow:var(--shadow)}
@@ -409,6 +437,9 @@
     /* 得分柱状图打印可见（浏览器默认不打印背景，轨道加边框、填充用纯色） */
     .bc-track{background:#eee; border:1px solid #bbb}
     .bc-fill{background:#333 !important}
+    /* 环形图：conic-gradient 属于背景，默认打印不渲染——强制打印背景 */
+    .donut{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+    .donut::before{background:#fff}
     /* 打印/PDF：隐藏跳转/进度条/锚点/行号，折叠内容强制展开 */
     .skip-link,.progress,.kbar,.plink,.ln-gutter{display:none !important}
     pre.linenos{display:block}
