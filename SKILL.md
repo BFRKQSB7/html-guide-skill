@@ -120,6 +120,10 @@ description: >
    - 骨架内置了深浅色切换、语法高亮、自动目录、代码复制（自动剔除 `$` 提示符）、
      Ctrl+K 章节跳转、阅读时长估算、标题锚点、顶部进度条、跳到正文——**不要删**，
      这些是页面的标准能力
+   - **按 user-config 功能偏好裁剪**：读 skill 目录下 `user-config.md` 的「功能偏好」节，
+     设为 `off` 的功能省略对应元素（`#themeToggle` / `#printBtn` / `#toTop` / `#kbar` /
+     `#progress` / `#toc`，映射见 user-config.example.md），骨架 JS 对缺失元素自带守卫；
+     默认全开。裁剪后 check_html 对应的 warning 属预期，忽略即可
    - 可选组件按需用：`<details class="fold">` 折叠进阶/可选内容、`<pre class="linenos">`
      显示代码行号、`<span class="em">` 中文着重号（用法见 design-system §4.23–4.28）
    - 全部文字用 `<html lang="...">` 与用户语言一致（默认中文）
