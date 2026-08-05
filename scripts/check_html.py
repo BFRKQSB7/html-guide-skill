@@ -108,6 +108,28 @@ def check(path):
     if "plink" not in src:
         warn("缺少标题锚点链接（.plink hover ¶）")
 
+    # ---- 组件一致性（确定性检查，源自 composing-html 的 lint 思路）----
+    # undefined-token：var(--X) 引用了页面里从未定义的令牌（拼写错误/缺定义）
+    defined_tokens = set(re.findall(r"--([a-zA-Z0-9-]+)\s*:", src))
+    used_tokens = set(re.findall(r"var\(--([a-zA-Z0-9-]+)\)", src))
+    undefined_tokens = sorted(t for t in used_tokens if t not in defined_tokens)
+    if undefined_tokens:
+        warn(f"引用了未定义的 CSS 令牌 var(--{'、--'.join(undefined_tokens[:6])})（检查拼写或缺少定义）")
+    # broken-tabs：Tab 按钮 data-target 没有对应的 .tab-panel[data-id]
+    tab_targets = set(re.findall(r'data-target="([^"]+)"', src))
+    tab_panels = set(re.findall(r'data-id="([^"]+)"', src))
+    broken_tabs = sorted(t for t in tab_targets if t not in tab_panels)
+    if broken_tabs:
+        warn(f"Tab 按钮 data-target={broken_tabs[:4]} 无对应 .tab-panel[data-id]")
+    # heading-skip：标题层级跳级（h2 后直接 h4 等）；h1 在 hero、正文从 h2 起属正常
+    heading_levels = [int(x) for x in re.findall(r"<h([1-6])[ >]", src)]
+    skips = []
+    for i in range(1, len(heading_levels)):
+        if heading_levels[i] - heading_levels[i - 1] > 1:
+            skips.append(f"h{heading_levels[i-1]}→h{heading_levels[i]}")
+    if skips:
+        warn(f"标题层级跳级：{'、'.join(skips[:6])}（保持 h1→h2→h3 逐级，别跳级）")
+
     # 代码块必须带 lang- 类（否则语法高亮不生效）——只查 <pre><code>，不误报行内 <code>
     pre_code_blocks = re.findall(r"<pre[^>]*>\s*<code[^>]*>", src)
     missing_lang = [c for c in pre_code_blocks if "lang-" not in c]

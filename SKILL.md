@@ -72,6 +72,10 @@ description: >
 > 你的环境有一个本地代理 **`127.0.0.1:7896`（Clash）**。系统代理已指向它，
 > `WebSearch` / `WebFetch` 工具默认走系统代理即可正常工作。具体配置与降级方案见
 > `references/search-guide.md`。
+>
+> `WebSearch` / `WebFetch` 若失效（报错 / 域名被拦 / JS 渲染页拿不到正文），改用
+> **browser-testing skill**（Chrome DevTools MCP）走用户浏览器采集，前提是用户装有该 skill；
+> 完整降级链见 `references/search-guide.md` §4。
 
 对以下信息点**逐条**联网核实或补充（代理配置、降级策略、引用规范都在 search-guide.md）：
 
