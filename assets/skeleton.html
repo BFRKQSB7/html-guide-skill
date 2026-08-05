@@ -144,13 +144,14 @@
   }
   .theme-toggle:hover{border-color:var(--accent); color:var(--accent)}
   /* 悬浮说明：按钮下方浮现「当前模式 · 点击切到哪」（读 data-tip，JS 切换时同步）；
+     右对齐按钮右缘（right:0），避免 tooltip 向右侧溢出屏幕；max-width 兜底换行；
      键盘聚焦同样显示；touch 设备不触发 hover，但图标本身可点击循环 */
   .theme-toggle::after{
     content:attr(data-tip);
-    position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%);
+    position:absolute; top:calc(100% + 8px); right:0;
     background:var(--text); color:var(--bg); padding:.35em .7em; border-radius:6px;
-    font-size:.72rem; line-height:1.4; white-space:nowrap; z-index:100;
-    opacity:0; visibility:hidden; pointer-events:none;
+    font-size:.72rem; line-height:1.4; white-space:normal; max-width:min(70vw,16rem); text-align:left;
+    opacity:0; visibility:hidden; pointer-events:none; z-index:100;
     transition:opacity .15s, visibility .15s;
   }
   .theme-toggle:hover::after, .theme-toggle:focus-visible::after{opacity:1; visibility:visible}
@@ -489,7 +490,7 @@
   </div>
 </header>
 
-<button class="theme-toggle" id="themeToggle" aria-label="切换主题 · 当前跟随系统(自动) · 点击切换浅色" data-tip="当前跟随系统(自动) · 点击切换浅色">🌓</button>
+<button class="theme-toggle" id="themeToggle" aria-label="切换主题 · 跟随系统 · 点击切浅色" data-tip="跟随系统 · 点击切浅色">🌓</button>
 <button class="print-btn" id="printBtn" aria-label="打印 / 导出 PDF" title="打印 / 导出 PDF">🖨️</button>
 <button class="to-top" id="toTop" aria-label="回到顶部" title="回到顶部">↑</button>
 
@@ -558,9 +559,9 @@
   var states = ["light", "dark", "auto"];
   var icons = { light: "☀️", dark: "🌙", auto: "🌓" };
   var tips = {
-    light: "当前浅色 · 点击切换深色",
-    dark: "当前深色 · 点击跟随系统",
-    auto: "当前跟随系统(自动) · 点击切换浅色"
+    light: "浅色 · 点击切深色",
+    dark: "深色 · 点击切跟随系统",
+    auto: "跟随系统 · 点击切浅色"
   };
   var toggle = document.getElementById("themeToggle");
   // 在过渡真正结束后才移除 .theme-switching 类：固定延时中途移除会取消还在跑的过渡，
