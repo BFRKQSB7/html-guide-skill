@@ -297,6 +297,9 @@
 
 - 切换时页面颜色带约 0.3s 过渡（`.theme-switching` 类仅在切换瞬间开启，夜间切浅色
   不会"啪"地闪白）；**初始加载不播过渡**，避免开页闪变
+- 三个图标含义：☀️ 浅色、🌙 深色、🌓 跟随系统（默认）。**悬浮按钮下方会浮现说明**
+  ——「当前模式 · 点击切到哪」（纯 CSS tooltip 读 `data-tip`，JS 切换时同步文案与
+  `aria-label`）；键盘 Tab 聚焦同样显示，touch 设备不触发 hover（图标本身可点击循环）
 - 尊重 `prefers-reduced-motion`（WCAG 2.3.3）：系统关闭「动画效果」时过渡自动禁用，
   主题仍即时切换——这是**预期行为**，不是 bug。要预览过渡时，在 Chrome DevTools 的
   Rendering 面板把 `prefers-reduced-motion` 模拟成 `no-preference` 再刷新
