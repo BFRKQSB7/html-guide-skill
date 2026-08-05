@@ -220,6 +220,8 @@
   details.fold[open] > summary{border-bottom:1px solid var(--border)}
   details.fold[open]{border-left:3px solid var(--accent)}
   details.fold .fold-body{padding:.2rem 1.1rem 1rem; color:var(--text-2)}
+  /* 折叠里的表格用正文色（fold-body 默认次级文字色，表格需要更醒目） */
+  details.fold table{color:var(--text)}
 
   /* ============ 组件：代码块 + 语法高亮 ============ */
   pre{
@@ -259,6 +261,15 @@
   /* 表格内语义标签：支持/不支持/推荐 */
   .tag-ok{display:inline-block; padding:.1em .5em; border-radius:999px; background:var(--ok-bg); color:var(--ok); font-size:.8rem; font-weight:650; white-space:nowrap}
   .tag-no{display:inline-block; padding:.1em .5em; border-radius:999px; background:var(--no-bg); color:var(--no); font-size:.8rem; font-weight:650; white-space:nowrap}
+
+  /* ============ 组件：得分柱状图（横向条，纯 CSS 自包含；--v 为填充宽度百分比）============ */
+  .barchart{display:flex; flex-direction:column; gap:.55rem; margin:1.4em 0}
+  .bc-row{display:grid; grid-template-columns:minmax(7rem,1fr) 2fr auto; align-items:center; gap:.7rem; font-size:.92rem}
+  .bc-label{color:var(--text-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .bc-label b{color:var(--text)}
+  .bc-track{background:var(--bg-soft); border-radius:999px; height:.8rem; overflow:hidden}
+  .bc-fill{display:block; height:100%; width:var(--v); background:linear-gradient(90deg,var(--accent),var(--accent-2)); border-radius:999px}
+  .bc-val{color:var(--text); font-weight:650; font-variant-numeric:tabular-nums}
 
   /* ============ 组件：卡片网格 ============ */
   .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin:1.4em 0}
@@ -395,6 +406,9 @@
     section{scroll-margin-top:0}
     .step,.callout,.card{border-color:#bbb; box-shadow:none; break-inside:avoid}
     th,td{border-color:#bbb}
+    /* 得分柱状图打印可见（浏览器默认不打印背景，轨道加边框、填充用纯色） */
+    .bc-track{background:#eee; border:1px solid #bbb}
+    .bc-fill{background:#333 !important}
     /* 打印/PDF：隐藏跳转/进度条/锚点/行号，折叠内容强制展开 */
     .skip-link,.progress,.kbar,.plink,.ln-gutter{display:none !important}
     pre.linenos{display:block}

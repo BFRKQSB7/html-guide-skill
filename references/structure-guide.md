@@ -37,6 +37,11 @@ procedure，带走「理解」就是 explainer，带走「该选哪个」就是 
 - **元信息**：hero 给难度徽标、类别 badge、技术 chips；阅读时长由骨架自动估算。
 - **长页面提示 Ctrl+K**：explainer/reference 等长页，开头用一句 callout 提示
   「按 Ctrl+K 快速跳转章节」。
+- **表格一眼看全**：表格默认不横向滚动——列多先精简/合并/拆表；竖向过长（>12 行）
+  用 `details.fold` 折叠（见 design-system §4.4）。综合对比表是选型页的核心，务必能整表阅读。
+- **有真实得分就给图**：对比/横评若收集到基准得分（AA 指数、Elo、Benchmark 分等），
+  用 `.barchart` 横向柱状图 + 得分明细表呈现，别只堆文字（design-system §4.29）。
+  缺项标 `—`，厂商自报标注「待独立核实」。
 
 ---
 

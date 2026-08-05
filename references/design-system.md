@@ -199,8 +199,19 @@
 </div>
 ```
 - 数据对比、配置项、速查用表格最合适 —— 别用卡片硬撑，也别把表格塞进卡片
-- `table-wrap` 提供横向滚动，小屏不破版
+- `table-wrap` 提供横向滚动，小屏不破版（**兜底**，不是默认依赖）
 - 表头用 `--text-2` 加粗，行条纹用 `--bg-soft`
+- **表格默认不做横向滚动，读者要一眼看全**（评测反馈：横向拖动很烦）：
+  - 列太多（约 >6 列）时优先**精简/合并列**——去掉冗余列、缩写表头、把厂商/版本合并进模型名；或拆成两张小表（参数表 + 亮点表）。横向滚动只留给真正不可删的多列逐项对比
+  - **竖向太长（约 >12 行）→ 折叠**，用 `details.fold` 包起来，summary 写清「N 个模型对比」，默认收起、点开看全（打印时骨架自动展开）：
+    ```html
+    <details class="fold">
+      <summary>完整对比表（11 个模型）<span class="badge info">展开</span></summary>
+      <div class="fold-body">
+        <div class="table-wrap"><table>…</table></div>
+      </div>
+    </details>
+    ```
 
 ### 4.5 卡片网格
 
@@ -480,6 +491,22 @@
 ```
 - 文字下方渲染强调点；西文/代码仍用 `<strong>`
 - 用途克制：一段里别满屏着重号，一个观点一个
+
+### 4.29 得分柱状图（横向条，纯 CSS）
+
+对比 / 横评页**有真实得分**时，用横向柱状图一眼呈现「谁高谁低」，比表格更直观。
+纯 CSS、无 JS、无外部库，深浅色与打印都适配：
+
+```html
+<div class="barchart">
+  <div class="bc-row"><span class="bc-label"><b>Claude Opus 5</b></span><span class="bc-track"><span class="bc-fill" style="--v:61%"></span></span><span class="bc-val">61</span></div>
+  <div class="bc-row"><span class="bc-label"><b>GPT-5.6 Sol</b></span><span class="bc-track"><span class="bc-fill" style="--v:59%"></span></span><span class="bc-val">59</span></div>
+</div>
+```
+- `--v` = 填充宽度百分比（0–100），作者按需计算；非 0–100 的指标（如 Elo ~1600）先按量表换算再填
+- 行内 `<b>` 包名称可加粗；轨道浅底、填充主色渐变，同一组图用同一量表
+- 图上方/下方配一句说明：指标名 + 量表 + 「越高越好/越低越好」（如「AA 智能指数 v4.1，越高越好」）
+- 有得分数据时**图表 + 明细表一起给**：柱状图负责直观，明细表（真实数字 + 缺项 `—` + 厂商自报标注）负责完整可查
 
 ---
 
