@@ -31,6 +31,7 @@
 | 终端徽标 | `>_` 圆角方框代表命令行内容 |
 | 中文着重号 | `<span class="em">` 规范的中文强调 |
 | 得分柱状图 | 对比/横评页用横向柱状图 + 得分明细表呈现真实基准分（纯 CSS，无外部库） |
+| 环形图 | 占比/构成数据（厂商份额、难度分布）用环形图 + 图例呈现（纯 CSS conic-gradient） |
 | 无障碍底线 | 链接下划线、`:focus-visible` 焦点环、跳过正文链接、`prefers-reduced-motion` |
 | 暖纸色浅色主题 | 非纯白刺眼背景 |
 
@@ -56,6 +57,9 @@
 
 安装后重启 Claude Code，"把这段内容做成 HTML" 即可触发。
 
+首次使用前，复制 `user-config.example.md` 为 `user-config.md` 并填写本机代理端口
+（联网核实用；不填则用系统代理 / 环境变量）。`user-config.md` 是本机个性化文件，不入库。
+
 ## 触发方式
 
 当你说出下面任意一种意思时，它会自动生效：
@@ -70,10 +74,11 @@
 ```
 html-guide/
 ├── SKILL.md                    # 主流程（接收→判型→联网核实→撰写→自检交付）
+├── user-config.example.md      # 个性化配置模板（复制为 user-config.md 填本机代理端口）
 ├── references/
 │   ├── design-system.md        # 视觉设计体系 + 反 AI 味规范 + 组件库
 │   ├── structure-guide.md      # 文档类型 → 页面结构映射
-│   └── search-guide.md         # 联网搜索与代理降级（curl -x 127.0.0.1:7896）
+│   └── search-guide.md         # 联网搜索与代理降级（代理端口见 user-config.md）
 ├── assets/
 │   └── skeleton.html           # 可复用骨架模板（内联 CSS/JS，含全部交互）
 ├── scripts/
