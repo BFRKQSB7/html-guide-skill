@@ -1,9 +1,21 @@
-# 联网搜索与代理（7896）
+# 联网搜索与代理
 
-Step 3 的实操指南。本环境已配置本地代理 **`127.0.0.1:7896`（Clash）**，系统级代理
-已指向它，因此大多数联网方式可直接工作。下面是正确的姿势与降级方案。
+Step 3 的实操指南。联网是否走代理、走哪个端口，是**每台机器不同的个性化信息**——
+本 skill 从 `user-config.md` 读取（见 §0），**不要把某台机器的端口写进正文当通用默认**。
 
 ---
+
+## 0. 本机代理配置（user-config.md）
+
+代理地址是**个性化信息**，不硬编码在 skill 里。按下面顺序解析，取第一个命中的：
+
+1. `user-config.md` 里的 `proxy:` 行——本 skill 目录下，已 `.gitignore` 不入库；
+   复制同目录 `user-config.example.md` 模板填写
+2. 环境变量 `HTTP_PROXY` / `HTTPS_PROXY`（若已全局设置）
+3. 都没有 → 不设代理直连
+
+> 示例：Clash 用户常写 `proxy: http://127.0.0.1:7896`；别的机器可能是 `7890`、
+> `10809` 或其他端口——**以 user-config 为准，别套用示例**。
 
 ## 1. 网络工具怎么走代理
 
@@ -14,17 +26,17 @@ Step 3 的实操指南。本环境已配置本地代理 **`127.0.0.1:7896`（Cla
 | `curl`（Bash） | 显式加代理参数 | 见下 |
 | browser-testing skill（Chrome DevTools MCP） | 走用户浏览器 | 前两者失效 / JS 渲染页时兜底：经用户 Chrome 采集（前提：用户装有该 skill） |
 
-`WebSearch` / `WebFetch` 是首选：它们走系统代理（即 7896），不需要额外配置。
+`WebSearch` / `WebFetch` 是首选：它们走系统代理，不需要额外配置。
 只有需要用 Bash 直接抓数据时才用 curl。
 
-**curl 走代理的写法（三选一，效果相同）：**
+**curl 走代理的写法（三选一，效果相同；`<proxy>` 填 user-config.md 里的 `proxy:` 值）：**
 
 ```bash
 # 方式一：单条命令显式指定
-curl -sL -x http://127.0.0.1:7896 https://example.com
+curl -sL -x <proxy> https://example.com
 
 # 方式二：会话内导出环境变量（一次性，只对当前 shell 生效）
-export HTTPS_PROXY=http://127.0.0.1:7896 HTTP_PROXY=http://127.0.0.1:7896
+export HTTPS_PROXY=<proxy> HTTP_PROXY=<proxy>
 curl -sL https://example.com
 ```
 
@@ -60,7 +72,7 @@ curl -sL https://example.com
 2. **官方渠道按时间倒序扫**：最可靠的是各家 Hugging Face 组织页按 `lastModified` 倒序，
    新模型/新版本一定在列表顶部；JSON API 直出、无 JS 渲染问题：
    ```bash
-   curl -s -x http://127.0.0.1:7896 "https://huggingface.co/api/models?author=<厂商>&sort=lastModified&direction=-1&limit=10"
+   curl -s -x <proxy> "https://huggingface.co/api/models?author=<厂商>&sort=lastModified&direction=-1&limit=10"
    ```
 3. **日期窗口显式化**：定死 `[知识截止, 今天]` 窗口，窗口内每一家的新发布/更新必须逐条
    交代，或明确标注「该窗口内无更新」——不留空窗
@@ -85,9 +97,8 @@ curl -sL https://example.com
 |---|---|
 | `WebSearch` 无结果或超时 | 换关键词重试一次；仍失败则用 `WebFetch` 直抓已知官方页面 |
 | `WebSearch` / `WebFetch` 都失效（工具报错、域名被拦、JS 渲染拿不到正文） | 用 **browser-testing skill**（Chrome DevTools MCP）走用户浏览器采集：`new_page` 打开目标 → `evaluate_script` 提取数据/正文 → 必要时 `take_screenshot`。前提：用户装有该 skill |
-| `curl` 连接被重置 / 超时 | 确认 7896 代理活着：`curl -s -x http://127.0.0.1:7896 https://www.google.com`；失败则尝试去掉 `-x` 直连（本机部分域名可直连） |
+| `curl` 连接被重置 / 超时 | 确认代理活着：`curl -s -x <proxy> https://www.google.com`（`<proxy>` 见 §0）；失败则尝试去掉 `-x` 直连 |
 | 整个网络不可用 | 停止联网核实，在页面「参考来源」标注**「本章未联网核实，信息来自模型知识」**，正文对未核实的关键事实加 warning callout |
 
-> 记忆参考：本机直连 `github.com` 会连接重置，git 依赖代理；只有
-> `raw.githubusercontent.com` / `codeload.github.com` 可以 curl 直连。若 git 报错
-> 检查 git 的 http.proxy 是否被改回了 7897。
+> 本机专属联网备注（哪些域名要直连、git 走什么代理等）见 skill 目录下 `user-config.md`——那是
+> 个性化信息，不入库。

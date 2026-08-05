@@ -69,8 +69,9 @@ description: >
 
 🚧 **GATE**：Step 2 完成；已列出需要核实/补充的信息点。
 
-> 你的环境有一个本地代理 **`127.0.0.1:7896`（Clash）**。系统代理已指向它，
-> `WebSearch` / `WebFetch` 工具默认走系统代理即可正常工作。具体配置与降级方案见
+> 联网是否走代理、走哪个端口，是**本机个性化信息**：先读 skill 目录下 `user-config.md`
+> 的 `proxy:` 行（没有则用环境变量 `HTTP_PROXY` / `HTTPS_PROXY`；`user-config.example.md`
+> 是模板）。`WebSearch` / `WebFetch` 工具默认走系统代理即可正常工作。具体配置与降级方案见
 > `references/search-guide.md`。
 >
 > `WebSearch` / `WebFetch` 若失效（报错 / 域名被拦 / JS 渲染页拿不到正文），改用
@@ -176,7 +177,7 @@ description: >
 |---|---|---|
 | 视觉设计体系（配色/字体/间距/组件） | `references/design-system.md` | 每次写 HTML 前必读 |
 | 文档类型→结构映射 | `references/structure-guide.md` | 每次 Step 2 判定后读对应章节 |
-| 联网搜索与代理（7896） | `references/search-guide.md` | Step 3 联网前必读 |
+| 联网搜索与代理（user-config.md 个性化配置） | `references/search-guide.md` | Step 3 联网前必读 |
 | HTML 骨架模板 | `assets/skeleton.html` | 每次 Step 4 作为起点 |
 | 校验脚本 | `scripts/check_html.py` | Step 5 自检 |
 
