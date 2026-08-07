@@ -549,7 +549,6 @@
   "use strict";
 
   /* ============ 主题切换（浅色 / 深色 / 跟随系统）============ */
-  var KEY = "html-guide-theme";
   function prefersReduced(){ return window.matchMedia("(prefers-reduced-motion: reduce)").matches; }
   /* 复制时剔除 shell 提示符（$ / >）——Prism command-line 的 canonical 做法：
      装饰性内容不进剪贴板；行注释 # 保留 */
@@ -602,12 +601,11 @@
       toggle.setAttribute("data-tip", tips[t]);
       toggle.setAttribute("aria-label", "切换主题 · " + tips[t]);
     }
-    try { localStorage.setItem(KEY, t); } catch (e) {}
   }
   function initTheme(){
-    var saved = "auto";
-    try { saved = localStorage.getItem(KEY) || "auto"; } catch (e) {}
-    applyTheme(saved, false);   // 初始加载不播过渡，避免打开页面的瞬间闪变
+    // 不持久化主题选择：单文件文档常分发给他人打开，作者调试时点过深浅色
+    // 不应影响读者——每次打开都默认跟随系统，点击切换只对本次会话生效
+    applyTheme("auto", false);   // 初始加载不播过渡，避免打开页面的瞬间闪变
   }
   if (toggle){
     initTheme();
