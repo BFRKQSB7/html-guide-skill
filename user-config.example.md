@@ -10,11 +10,11 @@ skill 正文（SKILL.md / search-guide.md / design-system.md），否则发布�
 ## 网络代理（search-guide 联网时读取）
 
 `proxy:` 行是 search-guide Step 3 联网时用的代理地址。每台机器不同，例如：
-- Clash 用户常见 `http://127.0.0.1:7890` 或 `7896`
+- Clash 用户常见 `http://127.0.0.1:7890`（或其他端口）
 - v2ray / SSR / 系统代理可能是其他端口，或直接用系统代理不填
 
 ```ini
-proxy: http://127.0.0.1:7896
+proxy: http://127.0.0.1:<你的代理端口>
 ```
 
 如果不需要代理（或系统已全局代理、直接可上网），可留空。

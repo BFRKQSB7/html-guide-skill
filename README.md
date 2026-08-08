@@ -51,7 +51,7 @@
 
 | 平台 | 放置位置 |
 |------|---------|
-| Windows | `C:\Users\NYRO\.claude\skills\html-guide` |
+| Windows | `%USERPROFILE%\.claude\skills\html-guide` |
 | macOS / Linux | `~/.claude/skills/html-guide` |
 
 ### 其他安装方式
