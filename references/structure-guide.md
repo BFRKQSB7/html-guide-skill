@@ -76,7 +76,8 @@ procedure，带走「理解」就是 explainer，带走「该选哪个」就是 
   - **一屏 ≤2 个「大声」元素**（大标题/大数字/拉引），其余安静；避免「圆角卡片+厚色条」
     这类 AI 签名（design-system §1.5 / §2.1 / §4.35）
 - **术语首现注记**：生僻专业词首次出现用 `.term` 给一句话定义（如 `quota<span class="term">订阅额度池</span>`），
-  读者才看得懂；显然词（URL/API）不注、正文已解释的不重复、只首现注（design-system §4.36）。
+  读者才看得懂；显然词（URL/API）不注、**非常见外语缩写（TL;DR 等）首现同样注记**、
+  正文已解释的不重复、只首现注（design-system §4.36）。
 - **风格（软默认）**：正文写完后在 `<html data-style="...">` 定观感——新闻综述/大事记→`newspaper`、
   观点长文/深度讲解→`magazine`、数据横评/速查→`minimal`、论文/规范→`academic`、默认→`modern`。
   数据页别硬套报纸风；先写正文最后定风格（design-system §2.2）。

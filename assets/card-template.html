@@ -362,11 +362,11 @@
       if (!steps) return;
       var area = active.clientHeight;
       if (area < 80) return;
-      var span = steps.querySelector("li span"), small = steps.querySelector("li small");
-      if (!span) return;
+      var spans = steps.querySelectorAll("li span"), smalls = steps.querySelectorAll("li small");
+      if (!spans.length) return;
       if (base.span === undefined){
-        base.span = parseFloat(getComputedStyle(span).fontSize);
-        base.small = small ? parseFloat(getComputedStyle(small).fontSize) : base.span * 0.8;
+        base.span = parseFloat(getComputedStyle(spans[0]).fontSize);
+        base.small = smalls.length ? parseFloat(getComputedStyle(smalls[0]).fontSize) : base.span * 0.8;
       }
       var fs = base.span, g = 0;
       // 上限绑定大标题字号：正文最多涨到标题的 ~85%，保证「比标题小」
@@ -378,8 +378,8 @@
       }
       while (contentH() < area * 0.96 && fs < cap && g++ < 80){
         fs += 1;
-        span.style.fontSize = fs + "px";
-        if (small) small.style.fontSize = (base.small + (fs - base.span) * 0.8) + "px";
+        for (var s = 0; s < spans.length; s++) spans[s].style.fontSize = fs + "px";
+        if (smalls.length) for (var m = 0; m < smalls.length; m++) smalls[m].style.fontSize = (base.small + (fs - base.span) * 0.8) + "px";
       }
       // 文字涨到上限仍填不满（步骤少时）→ space-around 均匀分配剩余空间，避免底部一大块空
       if (contentH() < area * 0.8) steps.style.alignContent = "space-around";
