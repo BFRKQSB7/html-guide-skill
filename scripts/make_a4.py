@@ -166,6 +166,7 @@ def main():
     ap.add_argument("--style", default="", help="data-style 主题：newspaper/magazine/minimal/brutal/terminal/tech")
     ap.add_argument("--light", action="store_true", help="浅色（默认跟随系统）")
     ap.add_argument("--dark", action="store_true", help="强制深色")
+    ap.add_argument("--scale", type=float, default=1.0, help="导出倍率（--force-device-scale-factor，如 1.5 → 1191×1685 更清晰）")
     args = ap.parse_args()
 
     src = open(args.input, encoding="utf-8").read()
@@ -181,9 +182,12 @@ def main():
         sys.exit(1)
     full_png = os.path.join(tempfile.gettempdir(), "htmlguide-a4-full.png")
     height = 12 + n * SH + (n - 1) * 12 + 16
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                    "--screenshot=" + full_png, "--window-size=%d,%d" % (SW, height),
-                    "file:///" + tmp.replace("\\", "/")], capture_output=True)
+    chrome_args = [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                   "--screenshot=" + full_png, "--window-size=%d,%d" % (SW, height)]
+    if args.scale and args.scale != 1.0:
+        chrome_args.append("--force-device-scale-factor=%g" % args.scale)
+    chrome_args.append("file:///" + tmp.replace("\\", "/"))
+    subprocess.run(chrome_args, capture_output=True)
 
     try:
         from PIL import Image
@@ -191,10 +195,13 @@ def main():
         print("!! 需要 Pillow：pip install Pillow", file=sys.stderr)
         sys.exit(1)
     os.makedirs(args.outdir, exist_ok=True)
+    s = args.scale if args.scale else 1.0
     im = Image.open(full_png).convert("RGB")
     for i in range(n):
-        y0 = 12 + i * (SH + 12)
-        im.crop((0, y0, SW, y0 + SH)).save(os.path.join(args.outdir, "page-%d.png" % (i + 1)))
+        y0 = round((12 + i * (SH + 12)) * s)
+        w = round(SW * s)
+        h = round(SH * s)
+        im.crop((0, y0, w, y0 + h)).save(os.path.join(args.outdir, "page-%d.png" % (i + 1)))
     os.remove(full_png)
     print("已生成 %d 页 A4 到 %s" % (n, args.outdir))
 
