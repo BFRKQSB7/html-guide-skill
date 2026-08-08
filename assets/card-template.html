@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<!--
+  html-guide 分享摘要卡模板（多布局 × 多风格）
+  ================================
+  用途：长文生成后顺带出一张「结论摘要卡」图片，供论坛 / 微信 / 不支持 HTML 的渠道分享。
+  定位：给「不愿读长文的人」一眼结论；HTML 给「愿意读的人」完整机制。图片只装「一眼看完」
+  的内容——标题 + 一句话结论 + 要点，别塞长文。
+
+  布局：`.card` 上写 `data-layout="..."` 切换版式（见下方设计要点，内容→布局选择见
+  design-system §6.3）。卡片只显示当前布局的骨架，其余布局是隐藏的模板，生成时：
+    1. 选一个布局（data/quote/masthead/grid/poster/steps）
+    2. 把该布局骨架里的占位内容换成真实内容（其余布局不用动）
+    3. 改 `.card` 的 `data-layout` 属性即可截图
+  风格：与页面主题同步，`<html data-style="...">` 切换——
+    modern（默认，teal）| newspaper（墨黑白·红·衬线）| magazine（暖奶油·森林绿·衬线）
+    | minimal（薄线·近无色·黑体）| brutal（粗黑边·硬影·高饱和）| terminal（深底等宽·绿）
+    | tech（深色科技·微发光）| swiss（瑞士国际主义·网格·瑞士红）| book（书卷·衬线·经典书排）。
+    生成时和页面选同一套。
+
+  布局设计要点（血统见 design-system §4.37 / §2.3）：
+    data    数据型：右侧大数字（现有）。结论 + 3~4 要点，右侧一个核心数字。适合有单一关键
+            数字的内容。右侧大数字 = 视觉焦点。
+    quote   观点型：大引述做主角。整卡左边是一个巨大引号 + 一句金句，底部两行支撑点。
+            适合观点/判断类内容——「一句话带走什么」比数字更重要。
+    masthead 头条编辑型：眉题 + 通栏大标题 + 导语 + 分隔线 + 结论/要点两栏。综述/新闻感。
+    grid    数据网格型：2 列 × 若干指标格（发丝线分隔），无单一主角数字。适合多指标、
+            每个都重要的内容（如多个配额/比率）。Swiss KPI 仪表盘构图。
+    poster  海报宣言型：色条 + 巨型标题占满主视觉 + 一行支撑。适合声明/大胆/挑衅式内容。
+            （标题须短，两行内）
+    steps   步骤型：编号步骤 2 列排布。适合「先做什么再做什么」的操作/教程内容。
+  通用排版原则（Butterick / Tufte / Vignelli，见 design-system §2.3）：大数字用
+  tabular-nums 对齐、数据卡无多余装饰（data-ink）、每处装饰能答上"为什么"、全大写加字距。
+
+  设计要点：
+  - 不用「圆角卡片 + 一侧厚色条」——那是 AI 生成 UI 的头号签名
+  - 陌生名词（quota / RPM…）用底部 .gloss 注记一行（静态图不能 hover，生僻词要看得见）
+  - 截图命令：
+    "C:/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu \
+      --hide-scrollbars --screenshot=out.png --window-size=1200,630 "file:///out.html"
+  内容放不下（被裁）→ 压缩文字或删要点，卡片必须一屏装下（1200×630）。
+-->
+<html lang="zh-CN" data-style="modern">
+<head>
+<meta charset="UTF-8">
+<title>摘要卡</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  /* ---------- 卡片令牌（各主题在此覆盖） ---------- */
+  :root, html[data-style="modern"]{
+    --c-bg:#faf8f5; --c-ink:#1e293b; --c-strong:#0f172a; --c-muted:#475569; --c-faint:#94a3b8;
+    --c-accent:#0d9488; --c-accent-soft:rgba(13,148,136,.10); --c-border:#e8e3da;
+    --c-head:"Songti SC","STSong",SimSun,"Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --c-body:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    --c-radius:6px;
+  }
+  html[data-style="newspaper"]{
+    --c-bg:#fbfaf6; --c-ink:#141414; --c-strong:#141414; --c-muted:#3a3a3a; --c-faint:#6b6b6b;
+    --c-accent:#b3261e; --c-accent-soft:#f7ecea; --c-border:#141414;
+    --c-head:"Songti SC","STSong",SimSun,"Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --c-body:"Songti SC","STSong",SimSun,"Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --c-radius:0;
+  }
+  html[data-style="magazine"]{
+    --c-bg:#faf6ec; --c-ink:#2b2620; --c-strong:#2b2620; --c-muted:#6b6153; --c-faint:#99917f;
+    --c-accent:#1b5e20; --c-accent-soft:#e8f2e6; --c-border:#e0d7bf;
+    --c-head:"Songti SC","STSong",SimSun,"Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --c-body:"Songti SC","STSong",SimSun,"Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --c-radius:4px;
+  }
+  html[data-style="minimal"]{
+    --c-bg:#ffffff; --c-ink:#1a1a1a; --c-strong:#1a1a1a; --c-muted:#4d4d4d; --c-faint:#8a8a8a;
+    --c-accent:#1a1a1a; --c-accent-soft:#f2f2f2; --c-border:#e5e5e5;
+    --c-head:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    --c-body:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    --c-radius:0;
+  }
+  html[data-style="brutal"]{
+    --c-bg:#f4f0e6; --c-ink:#111111; --c-strong:#111111; --c-muted:#3a3a3a; --c-faint:#6b6b6b;
+    --c-accent:#2b6cf6; --c-accent-soft:#ffe66e; --c-border:#111111;
+    --c-head:"Arial Black","Impact","Microsoft YaHei",sans-serif;
+    --c-body:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    --c-radius:0;
+  }
+  html[data-style="terminal"]{
+    --c-bg:#0d1117; --c-ink:#c9d1d9; --c-strong:#33ff00; --c-muted:#8b949e; --c-faint:#6e7681;
+    --c-accent:#33ff00; --c-accent-soft:rgba(51,255,0,.12); --c-border:#33ff00;
+    --c-head:"Cascadia Code","JetBrains Mono",Consolas,"SF Mono",monospace;
+    --c-body:"Cascadia Code","JetBrains Mono",Consolas,"SF Mono",monospace;
+    --c-radius:0;
+  }
+  html[data-style="tech"]{
+    --c-bg:#0a0a0f; --c-ink:#ededf0; --c-strong:#ededf0; --c-muted:#a0a0b0; --c-faint:#6f6f80;
+    --c-accent:#8b7cf6; --c-accent-soft:rgba(139,124,246,.14); --c-border:#2a2a3d;
+    --c-head:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    --c-body:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC",Arial,sans-serif;
+    --c-radius:12px;
+  }
+  html[data-style="swiss"]{
+    --c-bg:#fafafa; --c-ink:#161616; --c-strong:#161616; --c-muted:#3f3f3f; --c-faint:#707070;
+    --c-accent:#e30613; --c-accent-soft:#fdebec; --c-border:#d8d8d8;
+    --c-head:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+    --c-body:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC","Noto Sans SC","Helvetica Neue",Arial,sans-serif;
+    --c-radius:0;
+  }
+  html[data-style="book"]{
+    --c-bg:#faf5ea; --c-ink:#2b2417; --c-strong:#2b2417; --c-muted:#5c5340; --c-faint:#94876b;
+    --c-accent:#9a3324; --c-accent-soft:#f3e4dc; --c-border:#d8c9a8;
+    --c-head:"Songti SC","STSong",SimSun,"Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --c-body:"Songti SC","STSong",SimSun,"Noto Serif CJK SC",Georgia,"Times New Roman",serif;
+    --c-radius:2px;
+  }
+
+  body{font-family:var(--c-body); background:#333; color:var(--c-ink)}
+  .card{width:1200px;height:630px;position:relative;overflow:hidden;padding:40px 56px;display:flex;flex-direction:column;
+    background:
+      radial-gradient(34% 50% at 96% -6%, var(--c-accent-soft), transparent 60%),
+      var(--c-bg)}
+  /* 右上角装饰：小方块 + 点阵（颜色随主题强调色） */
+  .card::before{content:""; position:absolute; top:40px; right:44px; width:9px; height:9px;
+    background:var(--c-accent); border-radius:2px}
+  .card::after{content:""; position:absolute; top:56px; right:40px; width:24px; height:24px;
+    background-image:radial-gradient(#d9d4cc 1.5px, transparent 1.5px); background-size:8px 8px; opacity:.7}
+  .meta{display:flex; gap:12px; align-items:center; margin-bottom:18px; font-size:15px}
+  .badge{display:inline-block; padding:4px 14px; border-radius:var(--c-radius); font-size:15px; font-weight:600;
+    color:var(--c-accent); background:var(--c-accent-soft); border:1px solid var(--c-border)}
+  .date{color:var(--c-faint)}
+
+  /* ---------- 布局容器：只显示当前 data-layout ---------- */
+  .layout{display:none; flex:1; min-height:0}
+
+  /* ============ 布局 data：右侧大数字 ============ */
+  [data-layout="data"] .layout-data{display:flex; gap:2.5rem}
+  [data-layout="data"] .main-col{flex:1; min-width:0; display:flex; flex-direction:column}
+  [data-layout="data"] h1{font-family:var(--c-head); font-size:41px; line-height:1.42; font-weight:600; color:var(--c-strong);
+    letter-spacing:.01em; margin-bottom:18px}
+  [data-layout="data"] .concl{font-size:20px; line-height:1.62; color:var(--c-accent); font-weight:600; margin-bottom:20px; max-width:33em}
+  [data-layout="data"] .points{list-style:none; flex:1}
+  [data-layout="data"] .points li{font-size:17px; line-height:1.6; color:var(--c-muted); padding:5px 0 5px 30px; position:relative}
+  [data-layout="data"] .stat-col{flex:none; width:32%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-left:1px solid var(--c-border); padding-left:2rem; text-align:center}
+  [data-layout="data"] .stat-col .bigstat b{font-family:var(--c-head); font-size:6.4rem; line-height:1; font-weight:700;
+    color:var(--c-accent); font-variant-numeric:tabular-nums; display:block}
+  [data-layout="data"] .stat-col .stat-cap{font-size:16px; color:var(--c-faint); margin-top:12px; max-width:16em; line-height:1.5}
+
+  /* ============ 布局 quote：大引述做主角 ============ */
+  /* 对角引号：`“` 左上（左槽内）、`”` 右下（引述区右下角）。左槽隔离开引号与正文，
+     右下闭引号悬在正文/支撑点下方空白区——金句保持一句话长度就不会碰到它 */
+  [data-layout="quote"] .layout-quote{display:flex; flex-direction:column}
+  [data-layout="quote"] .quote-body{display:flex; flex:1; min-height:0}
+  [data-layout="quote"] .quote-gutter{flex:none; width:132px; position:relative}
+  [data-layout="quote"] .quote-gutter::before{content:"“"; position:absolute; top:0; left:-6px; font-family:var(--c-head);
+    font-size:7.5rem; line-height:1; color:var(--c-accent); opacity:.85; user-select:none}
+  [data-layout="quote"] .quote-main{flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center;
+    position:relative; padding-bottom:96px}
+  [data-layout="quote"] .quote-main::after{content:"”"; position:absolute; right:-4px; bottom:8px; font-family:var(--c-head);
+    font-size:7.5rem; line-height:1; color:var(--c-accent); opacity:.85; user-select:none}
+  [data-layout="quote"] .q-text{font-family:var(--c-head); font-size:clamp(30px,4vw,42px); line-height:1.5; font-weight:600;
+    color:var(--c-strong); max-width:25em}
+  [data-layout="quote"] .q-src{font-size:15px; color:var(--c-faint); margin-top:14px}
+  [data-layout="quote"] .q-points{margin-top:auto; display:flex; gap:28px; padding:0; list-style:none}
+  [data-layout="quote"] .q-points li{flex:1; font-size:15.5px; line-height:1.6; color:var(--c-muted);
+    padding:12px 0 0; border-top:1px solid var(--c-border); position:relative}
+  [data-layout="quote"] .q-points li::before{content:""; position:absolute; top:-3px; left:0; width:26px; height:5px; background:var(--c-accent)}
+
+  /* ============ 布局 masthead：头条编辑型 ============ */
+  [data-layout="masthead"] .layout-masthead{display:flex; flex-direction:column}
+  [data-layout="masthead"] .mast-kicker{font-size:13px; letter-spacing:.28em; color:var(--c-accent); font-weight:600; margin-bottom:10px}
+  [data-layout="masthead"] h1{font-family:var(--c-head); font-size:clamp(36px,4.6vw,50px); line-height:1.28; font-weight:800;
+    color:var(--c-strong); margin-bottom:10px; letter-spacing:.005em}
+  [data-layout="masthead"] .mast-deck{font-size:17.5px; color:var(--c-muted); line-height:1.6; max-width:48em}
+  [data-layout="masthead"] .mast-rule{height:3px; background:var(--c-accent); margin:16px 0 18px; width:100%}
+  [data-layout="masthead"] .mast-cols{display:flex; gap:34px; flex:1; min-height:0}
+  [data-layout="masthead"] .mast-concl{flex:1.25; font-size:16.5px; line-height:1.72; color:var(--c-ink)}
+  [data-layout="masthead"] .mast-cols .points{flex:1; list-style:none}
+  [data-layout="masthead"] .mast-cols .points li{font-size:15px; line-height:1.6; color:var(--c-muted); padding:5px 0 5px 26px; position:relative}
+  [data-layout="masthead"] .mast-cols .points li::before{content:"▪"; position:absolute; left:4px; color:var(--c-accent); font-weight:700}
+
+  /* ============ 布局 grid：数据网格型（KPI） ============ */
+  [data-layout="grid"] .layout-grid{display:flex; flex-direction:column}
+  [data-layout="grid"] h1{font-family:var(--c-head); font-size:clamp(27px,3.4vw,36px); line-height:1.32; font-weight:700;
+    color:var(--c-strong); margin-bottom:16px; letter-spacing:.01em}
+  [data-layout="grid"] .grid-stats{display:grid; grid-template-columns:repeat(4,1fr); flex:1; border-top:1px solid var(--c-border);
+    border-bottom:1px solid var(--c-border)}
+  [data-layout="grid"] .gstat{display:flex; flex-direction:column; justify-content:center; padding:6px 18px 6px 0}
+  [data-layout="grid"] .gstat + .gstat{border-left:1px solid var(--c-border); padding-left:24px}
+  [data-layout="grid"] .gstat b{font-family:var(--c-head); font-size:clamp(32px,3.8vw,46px); line-height:1.05; font-weight:700;
+    color:var(--c-accent); font-variant-numeric:tabular-nums}
+  [data-layout="grid"] .gstat span{font-size:14px; color:var(--c-faint); margin-top:8px; line-height:1.5}
+  [data-layout="grid"] .grid-note{font-size:15px; color:var(--c-muted); margin-top:16px; line-height:1.6; max-width:60em}
+
+  /* ============ 布局 poster：海报宣言型 ============ */
+  /* 通栏大标题做主视觉（占满整宽，右边不空）+ 底部论据行给足解释空间（不止两句话） */
+  [data-layout="poster"] .layout-poster{display:flex; flex-direction:column}
+  [data-layout="poster"] .poster-bar{width:96px; height:12px; background:var(--c-accent); margin-bottom:22px}
+  [data-layout="poster"] h1{font-family:var(--c-head); font-size:clamp(50px,6.6vw,72px); line-height:1.14; font-weight:800;
+    letter-spacing:-.015em; color:var(--c-strong); max-width:16em}
+  [data-layout="poster"] .poster-sub{font-size:16.5px; color:var(--c-muted); margin-top:16px; letter-spacing:.02em}
+  [data-layout="poster"] .poster-points{margin-top:auto; list-style:none; display:flex; gap:30px;
+    padding:16px 0 0; border-top:1px solid var(--c-border)}
+  [data-layout="poster"] .poster-points li{flex:1; font-size:16px; line-height:1.6; color:var(--c-muted);
+    padding:10px 0 0 24px; position:relative}
+  [data-layout="poster"] .poster-points li::before{content:"▸"; position:absolute; left:0; top:10px; color:var(--c-accent); font-weight:700}
+
+  /* ============ 布局 steps：步骤型 ============ */
+  [data-layout="steps"] .layout-steps{display:flex; flex-direction:column}
+  [data-layout="steps"] h1{font-family:var(--c-head); font-size:clamp(32px,4vw,44px); line-height:1.3; font-weight:700;
+    color:var(--c-strong); margin-bottom:14px; letter-spacing:.01em}
+  /* align-content:start：步骤紧跟标题排布，不留垂直居中大空隙；正文由自动适配 JS 放大铺满 */
+  [data-layout="steps"] .steps{list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:10px 30px; flex:1; align-content:start}
+  [data-layout="steps"] .steps li{display:flex; gap:16px; align-items:flex-start; padding:16px 0; border-top:1px solid var(--c-border)}
+  [data-layout="steps"] .steps li b{flex:none; width:34px; height:34px; border-radius:50%; background:var(--c-accent-soft);
+    color:var(--c-accent); display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:700}
+  [data-layout="steps"] .steps li span{display:block; font-size:19px; font-weight:600; color:var(--c-ink)}
+  [data-layout="steps"] .steps li small{display:block; font-size:15.5px; color:var(--c-faint); line-height:1.55; margin-top:4px}
+
+  .gloss{font-size:13px; line-height:1.55; color:var(--c-faint); margin:16px 0 0; max-width:58em}
+  .gloss b{color:var(--c-muted); font-weight:600; margin-right:.3em}
+  .foot{display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--c-border);
+    padding-top:16px; margin-top:14px; font-size:15px; color:var(--c-muted)}
+  .gh-icon{width:1em;height:1em;vertical-align:-.15em;margin-right:.35em}
+
+  /* ---------- 各主题组件差异（布局无关元素，可安全跨布局生效） ---------- */
+  html[data-style="newspaper"] .card{border:1px solid var(--c-border)}
+  html[data-style="newspaper"] .badge{border-radius:0; border:1px solid var(--c-accent)}
+  html[data-style="newspaper"] .points li{font-size:16px; line-height:1.5; padding:4px 0 4px 26px}
+  html[data-style="newspaper"] .points li::before{content:"▪"; left:4px}
+  html[data-style="newspaper"] .concl{color:var(--c-ink); font-weight:700; font-size:19px; margin-bottom:16px}
+  html[data-style="newspaper"] [data-layout="masthead"] h1{border-bottom:2px double var(--c-border); padding-bottom:10px}
+  html[data-style="magazine"] .card{box-shadow:0 0 0 1px var(--c-border)}
+  html[data-style="magazine"] .stat-col .bigstat b{font-size:7rem}
+  html[data-style="minimal"] .points li::before{content:"—"; left:4px}
+  html[data-style="minimal"] .concl{color:var(--c-strong)}
+  html[data-style="brutal"] .card{border:3px solid var(--c-border)}
+  html[data-style="brutal"] .badge{border:2px solid var(--c-border); border-radius:0; color:var(--c-ink); background:var(--c-accent-soft)}
+  html[data-style="brutal"] .points li::before{content:"▸"; color:var(--c-accent)}
+  html[data-style="brutal"] .concl{color:var(--c-ink); font-weight:700}
+  html[data-style="brutal"] [data-layout="poster"] h1{letter-spacing:-.03em}
+  html[data-style="terminal"] .card{border:1px solid var(--c-border)}
+  html[data-style="terminal"] h1::before,html[data-style="terminal"] .q-text::before{content:"$ "; color:var(--c-accent)}
+  html[data-style="terminal"] .points li::before{content:"→"; color:var(--c-accent)}
+  html[data-style="terminal"] .badge{border:1px solid var(--c-accent); background:transparent; border-radius:0}
+  html[data-style="tech"] .card{border:1px solid var(--c-border)}
+  html[data-style="tech"] .badge{border-color:rgba(139,124,246,.3)}
+  html[data-style="swiss"] .card{border:1px solid var(--c-border); border-top:6px solid var(--c-accent)}
+  html[data-style="swiss"] .badge{background:var(--c-accent); color:#fff; border:none}
+  html[data-style="swiss"] .points li::before{content:"—"; color:var(--c-accent)}
+  html[data-style="swiss"] .stat-col .bigstat b,html[data-style="swiss"] .gstat b{color:var(--c-strong)}
+  html[data-style="book"] .card{border:1px solid var(--c-border)}
+  html[data-style="book"] .badge{border:1px solid var(--c-accent); color:var(--c-accent)}
+  html[data-style="book"] .points li::before{content:"·"; color:var(--c-accent)}
+  html[data-style="book"] .stat-col .bigstat b{color:var(--c-accent)}
+  html[data-style="book"] [data-layout="masthead"] h1{border-bottom:1px double var(--c-border); padding-bottom:10px}
+</style>
+</head>
+<body>
+  <div class="card" data-layout="data">
+    <div class="meta">
+      <span class="badge">讲解</span>
+      <span class="date">2026-08-08 更新</span>
+    </div>
+
+    <!-- 布局 data：右侧大数字（默认） -->
+    <div class="layout layout-data">
+      <div class="main-col">
+        <h1>主标题：一句话说清这件事</h1>
+        <div class="concl">一句话结论：读者立刻带走的核心答案。</div>
+        <ul class="points">
+          <li>要点一：一个关键事实或数字。</li>
+          <li>要点二：一个关键事实或数字。</li>
+          <li>要点三：一个关键事实或数字。</li>
+        </ul>
+      </div>
+      <div class="stat-col">
+        <div class="bigstat"><b>−80%</b></div>
+        <div class="stat-cap">核心数据 · 口径说明</div>
+      </div>
+    </div>
+
+    <!-- 布局 quote：大引述做主角（引号在左槽内，与正文分栏，永不重叠） -->
+    <div class="layout layout-quote">
+      <div class="quote-body">
+        <div class="quote-gutter" aria-hidden="true"></div>
+        <div class="quote-main">
+          <p class="q-text">把最有力的一句结论做成整卡的视觉焦点，像编辑大引述。</p>
+          <p class="q-src">—— 观点出处 / 论据支撑的一句话</p>
+        </div>
+      </div>
+      <ul class="points q-points">
+        <li>支撑点一：一句事实或理由。</li>
+        <li>支撑点二：一句事实或理由。</li>
+      </ul>
+    </div>
+
+    <!-- 布局 masthead：头条编辑型 -->
+    <div class="layout layout-masthead">
+      <div class="mast-kicker">眉题 · 栏目名</div>
+      <h1>综述大标题，通栏排一行或两行</h1>
+      <p class="mast-deck">一句话导语：读者第一眼先读到的新闻式摘要，说清"发生了什么事"。</p>
+      <div class="mast-rule"></div>
+      <div class="mast-cols">
+        <p class="mast-concl">结论段：两三句话点出这件事的本质与判断，告诉读者该怎么看、该带走什么。</p>
+        <ul class="points">
+          <li>要点一：一个关键事实。</li>
+          <li>要点二：一个关键事实。</li>
+          <li>要点三：一个关键事实。</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 布局 grid：数据网格型（KPI） -->
+    <div class="layout layout-grid">
+      <h1>多指标结论：一句话总览这几个数</h1>
+      <div class="grid-stats">
+        <div class="gstat"><b>80</b><span>指标一 · 口径</span></div>
+        <div class="gstat"><b>1.2×</b><span>指标二 · 口径</span></div>
+        <div class="gstat"><b>−9%</b><span>指标三 · 口径</span></div>
+        <div class="gstat"><b>7 天</b><span>指标四 · 口径</span></div>
+      </div>
+      <p class="grid-note">一句话总结多个指标背后的共同判断，读者不用自己算。</p>
+    </div>
+
+    <!-- 布局 poster：海报宣言型（通栏大标题 + 底部论据行） -->
+    <div class="layout layout-poster">
+      <div class="poster-bar"></div>
+      <h1>巨型宣言式标题通栏两行，占满整卡宽度</h1>
+      <p class="poster-sub">一句支撑说明，克制地放在大标题之下。</p>
+      <ul class="poster-points">
+        <li>支撑点一：一句论据或事实。</li>
+        <li>支撑点二：一句论据或事实。</li>
+        <li>支撑点三：一句论据或事实。</li>
+      </ul>
+    </div>
+
+    <!-- 布局 steps：步骤型 -->
+    <div class="layout layout-steps">
+      <h1>操作步骤：一句话说明要做什么</h1>
+      <ol class="steps">
+        <li><b>1</b><div><span>第一步做什么</span><small>这一步的一句话说明。</small></div></li>
+        <li><b>2</b><div><span>第二步做什么</span><small>这一步的一句话说明。</small></div></li>
+        <li><b>3</b><div><span>第三步做什么</span><small>这一步的一句话说明。</small></div></li>
+        <li><b>4</b><div><span>第四步做什么</span><small>这一步的一句话说明。</small></div></li>
+      </ol>
+    </div>
+
+    <div class="gloss"><b>注：</b>quota = 订阅额度池 · RPM = 每分钟请求上限</div>
+    <div class="foot">
+      <span><svg class="gh-icon" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>作者名 · 由 html-guide 整理</span>
+      <span>完整解读见对应 HTML 文档</span>
+    </div>
+  </div>
+  <!-- 自动适配：steps 布局的正文文字放大到铺满可用高度（始终小于大标题字号、不溢出卡片）。
+       以当前布局为准，幂等（重复触发按基线重算）；截图流程中 fonts.ready + load 兜底都会执行。 -->
+  <script>
+  (function(){
+    var base = {};
+    function fit(){
+      var active = null;
+      var ls = document.querySelectorAll(".layout");
+      for (var i=0;i<ls.length;i++){ if (getComputedStyle(ls[i]).display !== "none"){ active = ls[i]; break; } }
+      if (!active) return;
+      var steps = active.querySelector(".steps");
+      if (!steps) return;
+      var area = active.clientHeight;
+      if (area < 80) return;
+      var span = steps.querySelector("li span"), small = steps.querySelector("li small");
+      if (!span) return;
+      if (base.span === undefined){
+        base.span = parseFloat(getComputedStyle(span).fontSize);
+        base.small = small ? parseFloat(getComputedStyle(small).fontSize) : base.span * 0.8;
+      }
+      var fs = base.span, g = 0;
+      // 上限绑定大标题字号：正文最多涨到标题的 ~85%，保证「比标题小」
+      var h1 = active.querySelector("h1");
+      var cap = (h1 ? parseFloat(getComputedStyle(h1).fontSize) : fs * 1.5) * 0.85;
+      function contentH(){
+        var top = steps.getBoundingClientRect().top;
+        return steps.lastElementChild.getBoundingClientRect().bottom - top;
+      }
+      while (contentH() < area * 0.96 && fs < cap && g++ < 80){
+        fs += 1;
+        span.style.fontSize = fs + "px";
+        if (small) small.style.fontSize = (base.small + (fs - base.span) * 0.8) + "px";
+      }
+      // 文字涨到上限仍填不满（步骤少时）→ space-around 均匀分配剩余空间，避免底部一大块空
+      if (contentH() < area * 0.8) steps.style.alignContent = "space-around";
+    }
+    function go(){ try { fit(); } catch(e){} }
+    if (document.fonts && document.fonts.ready){ document.fonts.ready.then(go); }
+    window.addEventListener("load", function(){ setTimeout(go, 120); });
+  })();
+  </script>
+</body>
+</html>
