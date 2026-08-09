@@ -1036,7 +1036,7 @@
   <ul class="checklist">
     <li><label><input type="checkbox"> 已装 Claude Code</label></li>
     <li><label><input type="checkbox"> skill 目录在 <code>~/.claude/skills/html-guide</code></label></li>
-    <li><label><input type="checkbox"> 需要联网核实时能走代理（本机 <code>127.0.0.1:7896</code>）</label></li>
+    <li><label><input type="checkbox"> 需要联网核实时能走代理（本机 <code>127.0.0.1:&lt;代理端口&gt;</code>）</label></li>
   </ul>
   <ol class="steps">
     <li class="step">
@@ -1048,7 +1048,7 @@
       <div class="step-head"><span class="step-num">2</span><h3>按需填 user-config.md</h3></div>
       <p>作者署名、代理端口、功能开关都在这个不入库的本地配置里（已被 .gitignore 排除）。</p>
       <pre><code class="lang-yaml"># user-config.md
-proxy: http://127.0.0.1:7896
+proxy: http://127.0.0.1:&lt;代理端口&gt;
 author: BFRKQSB7
 theme-toggle: on
 print-btn: on</code></pre>
