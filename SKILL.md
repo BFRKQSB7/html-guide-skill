@@ -212,7 +212,9 @@ description: >
    `os.startfile` / `start` / 任何预览服务都会在用户屏幕上弹出窗口，造成干扰，**禁止使用**。
    需要视觉确认时，把文件路径告诉用户，让用户自己选择打开。
 7. **交付**：把文件路径告诉用户，一句话说明这份文档的结构与来源数量。如用户需要，
-   可再导出 PDF（浏览器打印 → 另存为 PDF）。
+   可再导出 PDF（浏览器打印 → 另存为 PDF；或 headless 免弹窗：
+   `chrome --headless=new --disable-gpu --print-to-pdf=<输出.pdf> <html路径>`，
+   真实渲染打印样式，适合自动化导出）。
 
 ### Step 6：其他输出（按 Step 2.5 的勾选）
 
