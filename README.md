@@ -2,7 +2,7 @@
 
 **中文简体** | [**English**](./docs/en/README.md)
 
-![](https://img.shields.io/badge/version-v2.3.0-blue)
+![](https://img.shields.io/badge/version-v2.4.0-blue)
 ![](https://img.shields.io/badge/license-MIT-green)
 
 把任意内容（对话回答、笔记、代码、项目讲解、主题、URL）自动生成一份**自包含、可交互、可打印、现代化视觉**的 HTML 指导文档——教程、指南、讲解页、操作手册、学习路径皆可，页面结构根据内容自适应。

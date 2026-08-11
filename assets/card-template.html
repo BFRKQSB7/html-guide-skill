@@ -37,7 +37,18 @@
   - 截图命令：
     "C:/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu \
       --hide-scrollbars --screenshot=out.png --window-size=1200,630 "file:///out.html"
-  内容放不下（被裁）→ 压缩文字或删要点，卡片必须一屏装下（1200×630）。
+
+  内容长度上限（data 布局实测 · 中文 · 现代风格；卡片固定 1200×630，溢出即重叠）：
+  - 大标题 h1（41px）：每行约 16 字，最多 4 行 ≈ 64 字；第 5 行（≈66 字起）就挤进注释/页脚区
+  - 结论 concl（20px）：每行约 33 字，单段最多 ≈ 180 字
+  - 每条要点（17px）：每行约 39 字，单条最多 ≈ 105 字（3 行）；全部要点总行数 ≤ 8（有注释时）
+  - 统计说明 stat-cap / 注释 gloss：各自独立空间，一般撑不爆
+  - 经验法则：标题+结论+全部要点总字数 ≤ 600 字号基本不动；
+    ≈ 800 时自动缩到最小档仍能装下；再往上会溢出，必须删减要点/压缩表述
+  自动缩字号（下方 B 段脚本，幂等）：正文超过可用高度时按 0.05 档整体缩小
+  大标题/小标题/要点/注释字号，块面积随字号同步缩小（相对行高 + 按比例缩 margin/padding），
+  缩到「正文收在 meta 之下、注释之上、卡片底内」为止；正常短内容一个字节都不动。
+  几何测量为准、不用字数估——各元素折行率不同，且自动处理所有布局。
 -->
 <html lang="zh-CN" data-style="modern">
 <head>
@@ -348,19 +359,20 @@
       <span>完整解读见对应 HTML 文档</span>
     </div>
   </div>
-  <!-- 自动适配：steps 布局的正文文字放大到铺满可用高度（始终小于大标题字号、不溢出卡片）。
-       以当前布局为准，幂等（重复触发按基线重算）；截图流程中 fonts.ready + load 兜底都会执行。 -->
+  <!-- 自动适配（幂等，截图流程中 fonts.ready + load 兜底都会执行）：
+       A. steps 布局：正文文字放大到铺满可用高度（始终小于大标题字号、不溢出卡片）。
+       B. 全布局防溢出：正文超出可用高度（卡片固定 1200×630，溢出会与注释/页脚重叠）
+          时，按 0.05 档整体缩小字号——含大标题 h1、小标题/结论、要点、统计说明、注释。
+          大标题等块面积随字号同步缩小（相对行高 + margin/padding 按比例缩放），
+          只缩到"收进注释之上 + 卡片底边之内"为止；正常短内容一个字节都不动。 -->
   <script>
   (function(){
     var base = {};
-    function fit(){
-      var active = null;
-      var ls = document.querySelectorAll(".layout");
-      for (var i=0;i<ls.length;i++){ if (getComputedStyle(ls[i]).display !== "none"){ active = ls[i]; break; } }
-      if (!active) return;
-      var steps = active.querySelector(".steps");
+    /* ---------- A. steps 铺满（原有逻辑） ---------- */
+    function fitSteps(layout){
+      var steps = layout.querySelector(".steps");
       if (!steps) return;
-      var area = active.clientHeight;
+      var area = layout.clientHeight;
       if (area < 80) return;
       var spans = steps.querySelectorAll("li span"), smalls = steps.querySelectorAll("li small");
       if (!spans.length) return;
@@ -369,8 +381,7 @@
         base.small = smalls.length ? parseFloat(getComputedStyle(smalls[0]).fontSize) : base.span * 0.8;
       }
       var fs = base.span, g = 0;
-      // 上限绑定大标题字号：正文最多涨到标题的 ~85%，保证「比标题小」
-      var h1 = active.querySelector("h1");
+      var h1 = layout.querySelector("h1");
       var cap = (h1 ? parseFloat(getComputedStyle(h1).fontSize) : fs * 1.5) * 0.85;
       function contentH(){
         var top = steps.getBoundingClientRect().top;
@@ -381,12 +392,96 @@
         for (var s = 0; s < spans.length; s++) spans[s].style.fontSize = fs + "px";
         if (smalls.length) for (var m = 0; m < smalls.length; m++) smalls[m].style.fontSize = (base.small + (fs - base.span) * 0.8) + "px";
       }
-      // 文字涨到上限仍填不满（步骤少时）→ space-around 均匀分配剩余空间，避免底部一大块空
       if (contentH() < area * 0.8) steps.style.alignContent = "space-around";
     }
-    function go(){ try { fit(); } catch(e){} }
-    if (document.fonts && document.fonts.ready){ document.fonts.ready.then(go); }
-    window.addEventListener("load", function(){ setTimeout(go, 120); });
+
+    /* ---------- B. 防溢出：整体缩字号 ---------- */
+    var BASES = {};
+    function readBase(el){
+      if (BASES[el]) return BASES[el];
+      var cs = getComputedStyle(el);
+      BASES[el] = {fs: parseFloat(cs.fontSize),
+                   mt: parseFloat(cs.marginTop), mb: parseFloat(cs.marginBottom),
+                   pt: parseFloat(cs.paddingTop), pb: parseFloat(cs.paddingBottom)};
+      return BASES[el];
+    }
+    var TARGET_SELS = ['h1','.concl','.points li','.stat-cap','.bigstat b','.mast-kicker','.mast-deck',
+                       '.mast-concl','.q-text','.q-src','.q-points li','.grid-note','.gstat b','.gstat span',
+                       '.poster-sub','.poster-points li','.steps li span','.steps li small'];
+    function targetsOf(layout){
+      var els = [];
+      TARGET_SELS.forEach(function(sel){ layout.querySelectorAll(sel).forEach(function(el){ els.push(el); }); });
+      return els;
+    }
+    function fitCard(card){
+      var layout = null;
+      var ls = card.querySelectorAll(".layout");
+      for (var i=0;i<ls.length;i++){ if (getComputedStyle(ls[i]).display !== "none"){ layout = ls[i]; break; } }
+      if (!layout) return;
+      var meta = card.querySelector(".meta");
+      var gloss = card.querySelector(".gloss");
+      var foot = card.querySelector(".foot");
+      var hasGloss = gloss && getComputedStyle(gloss).display !== 'none' && gloss.textContent.trim();
+      var bottomRef = hasGloss ? gloss : foot;
+      var cardRect = card.getBoundingClientRect();
+      var main = targetsOf(layout);              // 布局内正文：须收在 meta 之下、bottomRef 之上
+      var bottom = [];                            // 底部固定区文字：须收在卡片底内
+      if (hasGloss){ bottom.push(gloss); var gb = gloss.querySelector('b'); if (gb) bottom.push(gb); }
+      if (!main.length && !bottom.length) return;
+      var all = main.concat(bottom);
+      function setScale(k){
+        for (var t=0;t<all.length;t++){
+          var el = all[t]; if (!el) continue;
+          var b = readBase(el);
+          el.style.fontSize = (b.fs * k).toFixed(1) + "px";
+          if (b.mt) el.style.marginTop = (b.mt * k).toFixed(1) + "px";
+          if (b.mb) el.style.marginBottom = (b.mb * k).toFixed(1) + "px";
+          if (b.pt) el.style.paddingTop = (b.pt * k).toFixed(1) + "px";
+          if (b.pb) el.style.paddingBottom = (b.pb * k).toFixed(1) + "px";
+        }
+      }
+      function bounds(list){
+        var lo = 1e9, hi = 0;
+        for (var t=0;t<list.length;t++){
+          var el = list[t]; if (!el) continue;
+          var r = el.getBoundingClientRect();
+          if (r.top < lo) lo = r.top;
+          if (r.bottom > hi) hi = r.bottom;
+        }
+        return {top: lo, bottom: hi};
+      }
+      var metaBottom = meta ? meta.getBoundingClientRect().bottom + 2 : cardRect.top;
+      var refTop = bottomRef ? bottomRef.getBoundingClientRect().top : cardRect.bottom;
+      var mainLimit = refTop - 2;                      // 正文不得越过注释/页脚上边
+      var cardLimit = cardRect.bottom - 4;             // 任何文字不得越过卡片底
+      var ok = bounds(main).top >= metaBottom && bounds(main).bottom <= mainLimit && bounds(bottom).bottom <= cardLimit;
+      if (ok) return;                                  // 已装下，不动
+      var k = 1.0;
+      while (k >= 0.5){
+        setScale(k);
+        metaBottom = meta ? meta.getBoundingClientRect().bottom + 2 : cardRect.top;
+        refTop = bottomRef ? bottomRef.getBoundingClientRect().top : cardRect.bottom;
+        mainLimit = refTop - 2;
+        cardLimit = cardRect.bottom - 4;
+        if (bounds(main).top >= metaBottom && bounds(main).bottom <= mainLimit && bounds(bottom).bottom <= cardLimit) return;
+        k -= 0.05;
+      }
+      setScale(0.5);                                   // 兜底：已到最小档
+    }
+
+    function go(){
+      var cards = document.querySelectorAll(".card");
+      for (var c=0;c<cards.length;c++){
+        var layout = null;
+        var ls = cards[c].querySelectorAll(".layout");
+        for (var i=0;i<ls.length;i++){ if (getComputedStyle(ls[i]).display !== "none"){ layout = ls[i]; break; } }
+        if (layout && layout.querySelector(".steps")) fitSteps(layout);   // A 先放大
+        fitCard(cards[c]);                                                 // B 再防溢出
+      }
+    }
+    function tryGo(){ try { go(); } catch(e){} }
+    if (document.fonts && document.fonts.ready){ document.fonts.ready.then(tryGo); }
+    window.addEventListener("load", tryGo);   // 同步跑，保证截图流程能及时取到适配后的布局
   })();
   </script>
 </body>
