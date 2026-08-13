@@ -159,6 +159,9 @@
   .tagpanel .tag.neg-sel{background:var(--neg-soft);border-color:var(--neg)}
   .tagpanel .tag.neg-sel .zh{color:var(--neg)}
   .tagpanel .tag.hidden{display:none}
+  .tagpanel .load-more{display:block;margin:14px auto;padding:7px 24px;background:var(--card2);border:1px solid var(--border);border-radius:20px;color:var(--accent);font-size:13px;cursor:pointer;transition:all .12s}
+  .tagpanel .load-more:hover{border-color:var(--accent);background:var(--accent-soft)}
+  .tagpanel .load-more-bar{display:flex;justify-content:center;align-items:center;gap:10px;padding:14px 12px;color:var(--text2);font-size:12.5px}
   .cat{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
   .cat-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--card);cursor:pointer;user-select:none}
   .cat-head:hover{background:#1a2438}
@@ -406,7 +409,8 @@ const SUBS = {
 
 /* ============ 构建分类 ============ */
 const fullMap = new Map();          // name(lower/空格形式) -> [name,cn,cat,pc]
-const catMap = {};                  // 分类名 -> [{en,zh}]
+const catMap = {};                  // 分类名 -> [{en,zh}]（精选/封顶）
+const fullCat = {};                 // 分类名 -> [{en,zh}]（完整，未封顶）
 FULL_TAGS.forEach(([name,cn,cat,pc])=>{
   fullMap.set(name.toLowerCase(), [name,cn,cat,pc]);
   fullMap.set(name.toLowerCase().replace(/_/g,' '), [name,cn,cat,pc]);
@@ -442,24 +446,27 @@ function buildCats(){
       catMap[c].push({en: has?fullMap.get(k)[0]:en, zh: CURATED_ZH[en] || (has?fullMap.get(k)[1]:null) || en});
     });
   });
-  // 2) General 自动归类：按热度排序、去重、每类上限
+  // 2) General 自动归类：按热度排序、去重、每类上限（完整版存 fullCat）
   const CAP=2500;
   Object.entries(GEN).forEach(([c,pool])=>{
     const have=new Set(catMap[c].map(x=>x.en.toLowerCase()));
     pool.sort((a,b)=>b[2]-a[2]);
     pool.forEach(([name,cn])=>{ const k=name.toLowerCase(); if(!have.has(k)){ catMap[c].push({en:name,zh:cn}); have.add(k); } });
+    fullCat[c]=catMap[c].slice();          // 完整：精选 + 全部自动归类
     if(catMap[c].length>CAP) catMap[c]=catMap[c].slice(0,CAP);
   });
-  // 3) 角色/画师/版权（按热度取前 N）
+  // 3) 角色/画师/版权（按热度取前 N；完整版存 fullCat）
   const SPECCAP={'角色':5000,'画师':3000,'版权/作品':3000};
   Object.entries(SPEC).forEach(([c,pool])=>{
     pool.sort((a,b)=>b[2]-a[2]);
-    catMap[c]=pool.slice(0,SPECCAP[c]).map(([name,cn])=>({en:name,zh:cn}));
+    fullCat[c]=pool.map(([name,cn])=>({en:name,zh:cn}));
+    catMap[c]=fullCat[c].slice(0,SPECCAP[c]);
   });
   // 4) 收藏：中文优先取分类展示值（含 CURATED_ZH / SPEC 覆盖），全量库兜底，最后英文
   favZhMap=new Map();
   Object.keys(catMap).forEach(c=>{ if(c.startsWith('★')) return; catMap[c].forEach(t=>{ const k=t.en.toLowerCase().replace(/_/g,' '); if(!favZhMap.has(k)) favZhMap.set(k,t.zh); }); });
   catMap['★ 收藏']=(JSON.parse(localStorage.getItem('dtag_fav')||'[]')).map(en=>{const k=en.toLowerCase();return {en:fullMap.get(k)?fullMap.get(k)[0]:en, zh:favZh(en)};});
+  Object.keys(catMap).forEach(c=>{ if(!(c in fullCat)) fullCat[c]=catMap[c].slice(); });  // 精选类等：完整=当前
   // 5) 全部：所有分类合并去重，按热度取前 1000 条最常用
   ALL_TAGS=[];
   { const seen=new Set();
@@ -487,6 +494,8 @@ let favSet=new Set(JSON.parse(localStorage.getItem('dtag_fav')||'[]'));
 let activeCat='★ 收藏';   // 默认显示收藏夹
 let activeSub='全部';
 let favOnly=false;        // 仅看收藏开关
+let catFull=false;        // 当前分类是否完整加载（非精选封顶）
+const CHUNK=4000;         // 完整加载时每批渲染的标签数
 let ALL_TAGS=[];
 const subsEl=document.getElementById('subsRow');
 
@@ -496,14 +505,14 @@ function renderPills(){
   const allBtn=document.createElement('button');
   allBtn.className='pill'+(activeCat==='__全部__'?' active':'');
   allBtn.innerHTML=`<span class="nm">全部</span>`;
-  allBtn.onclick=()=>{ activeCat='__全部__'; activeSub='全部'; renderPills(); renderSubs(); renderPanel(); };
+  allBtn.onclick=()=>{ activeCat='__全部__'; activeSub='全部'; catFull=false; renderPills(); renderSubs(); renderPanel(); };
   favPillEl.appendChild(allBtn);
   Object.keys(catMap).forEach(c=>{
     const isFav=c.startsWith('★');
     const p=document.createElement('button');
     p.className='pill'+(c===activeCat?' active':'')+(isFav?' fav-pill':'');
     p.innerHTML=`<span class="nm">${c}</span>`;
-    p.onclick=()=>{ activeCat=c; activeSub='全部'; renderPills(); renderSubs(); renderPanel(); };
+    p.onclick=()=>{ activeCat=c; activeSub='全部'; catFull=false; renderPills(); renderSubs(); renderPanel(); };
     (isFav?favPillEl:pillsEl).appendChild(p);
   });
 }
@@ -515,25 +524,26 @@ function renderSubs(){
     const b=document.createElement('button');
     b.className='sub-pill'+(s===activeSub?' active':'');
     b.textContent=s;
-    b.onclick=()=>{ activeSub=s; renderSubs(); renderPanel(); };
+    b.onclick=()=>{ activeSub=s; catFull=false; renderSubs(); renderPanel(); };
     subsEl.appendChild(b);
   });
 }
 function renderPanel(){
   panelEl.innerHTML='';
-  let items, isAll=false;
-  if(activeCat==='__全部__'){
-    isAll=true; items=ALL_TAGS;
-  } else {
-    items=catMap[activeCat]||[];
-    const subs=SUBS[activeCat];
+  const isAll=activeCat==='__全部__';
+  const subs=SUBS[activeCat];
+  const filterFn=t=>{
     if(subs && subs[activeSub]){
-      const kws=subs[activeSub];
-      items=items.filter(t=>{ const sp=t.en.replace(/_/g,' '); return kws.some(k=>sp.includes(k)); });
+      const kws=subs[activeSub], sp=t.en.replace(/_/g,' ');
+      if(!kws.some(k=>sp.includes(k))) return false;
     }
-  }
-  if(favOnly) items=items.filter(t=>favSet.has(t.en));
-  if(!items.length){
+    return !(favOnly && !favSet.has(t.en));
+  };
+  // 完整列表（当前二级+仅看收藏过滤后）用于计数与完整加载
+  const fullItems=(isAll?ALL_TAGS:(fullCat[activeCat]||[])).filter(filterFn);
+  // 默认精选（封顶）列表
+  const items=(isAll?ALL_TAGS:(catMap[activeCat]||[])).filter(filterFn);
+  if(!items.length && !fullItems.length){
     panelEl.innerHTML='<div class="empty">'+(activeCat==='★ 收藏'?'还没有收藏 —— 在其它分类里点标签上的 ☆ 即可收藏':(favOnly?'当前分类没有已收藏的词，关掉「仅看收藏」试试':'这个二级分类暂无标签，切回「全部」看看'))+'</div>';
     return;
   }
@@ -545,8 +555,39 @@ function renderPanel(){
   }
   const box=document.createElement('div');
   box.className='tags';
-  items.forEach(t=>box.appendChild(makeTag(t, activeCat==='__全部__'?'全部':activeCat)));
   panelEl.appendChild(box);
+  const catLabel=isAll?'全部':activeCat;
+  if(catFull){
+    // 完整加载：分块追加，避免一次渲染十万级标签卡死
+    let idx=0;
+    const step=()=>{
+      fullItems.slice(idx,idx+CHUNK).forEach(t=>box.appendChild(makeTag(t,catLabel)));
+      idx=Math.min(idx+CHUNK, fullItems.length);
+      if(idx<fullItems.length){
+        const b=document.createElement('button');
+        b.className='load-more';
+        b.textContent='继续加载…（'+idx.toLocaleString()+' / '+fullItems.length.toLocaleString()+'）';
+        b.onclick=()=>{ b.remove(); step(); refresh(); };
+        panelEl.appendChild(b);
+      } else {
+        const bar=document.createElement('div');
+        bar.className='load-more-bar';
+        bar.innerHTML='已显示全部 '+fullItems.length.toLocaleString()+' 条 <button class="load-more">收起至精选</button>';
+        bar.querySelector('.load-more').onclick=()=>{ catFull=false; renderPanel(); refresh(); };
+        panelEl.appendChild(bar);
+      }
+    };
+    step();
+  } else {
+    items.forEach(t=>box.appendChild(makeTag(t,catLabel)));
+    if(fullItems.length>items.length){
+      const b=document.createElement('button');
+      b.className='load-more';
+      b.textContent='加载全部 '+fullItems.length.toLocaleString()+' 条';
+      b.onclick=()=>{ catFull=true; renderPanel(); refresh(); };
+      panelEl.appendChild(b);
+    }
+  }
 }
 function makeTag(t,cat){
   const b=document.createElement('span');
@@ -574,6 +615,7 @@ function favZh(en){ const k=en.toLowerCase().replace(/_/g,' '); return favZhMap.
 function rebuildFav(){
   const arr=[...favSet].map(en=>{const k=en.toLowerCase();return {en:fullMap.get(k)?fullMap.get(k)[0]:en, zh:favZh(en)};});
   catMap['★ 收藏']=arr;
+  fullCat['★ 收藏']=arr;
 }
 function refresh(){
   // 高亮当前面板的 tag
@@ -757,12 +799,12 @@ function copyPos(){ posOut.value&&navigator.clipboard.writeText(posOut.value).th
 function copyNeg(){ negOut.value&&navigator.clipboard.writeText(negOut.value).then(()=>flash('✓ 负面已复制')); }
 function copyAll(){ const a=posOut.value, b=negOut.value; const t=(a?('正面: '+a):'')+(a&&b?'\n':'')+(b?('负面: '+b):''); t&&navigator.clipboard.writeText(t).then(()=>flash('✓ 全部已复制')); }
 function clearAll(){ selected.clear(); refresh(); flash('已清空'); }
-function showFavCat(){ activeCat='★ 收藏'; renderPills(); renderPanel(); pillsEl.scrollIntoView({behavior:'smooth',block:'center'}); }
+function showFavCat(){ activeCat='★ 收藏'; catFull=false; renderPills(); renderPanel(); pillsEl.scrollIntoView({behavior:'smooth',block:'center'}); }
 function toggleFavOnly(){
   favOnly=!favOnly;
   const b=document.getElementById('favOnlyBtn');
   if(b){ b.textContent='仅看收藏: '+(favOnly?'开':'关'); b.style.background=favOnly?'var(--fav)':'var(--fav-soft)'; b.style.color=favOnly?'#1a1200':'var(--fav)'; }
-  renderPanel();
+  catFull=false; renderPanel();
 }
 let flashTimer;
 function flash(m){ const el=document.querySelector('.head .meta'); el.textContent=m; clearTimeout(flashTimer); flashTimer=setTimeout(()=>el.textContent=`全量 ${FULL_TAGS.length} 标签`,1500); }
