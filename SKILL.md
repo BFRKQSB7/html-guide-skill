@@ -355,7 +355,7 @@ python scripts/make_a4.py <输入.html> <输出目录> [--style magazine] [--lig
 | 文档类型→结构映射 | `references/structure-guide.md` | 每次 Step 2 判定后读对应章节 |
 | 联网搜索与代理（user-config.md 个性化配置） | `references/search-guide.md` | Step 3 联网前必读 |
 | HTML 骨架模板 | `assets/skeleton.html` | 每次 Step 4 作为起点 |
-| 交互式标签超市模板 | `assets/标签超市.html` | 需要「点选中文标签→生成英文串」这类**交互工具**页时，复制它做起点（含全量 Danbooru 中英标签库、分类/二级分类/搜索/收藏/仅看收藏） |
+| 交互式标签超市模板 | `assets/标签超市.html` | 需要「点选中文标签→生成英文串」这类**交互工具**页时，复制它做起点（骨架模板：仅含示例标签 + 分类/二级分类/搜索/收藏/仅看收藏；全量库用生成脚本按锚点 `const FULL_TAGS = [` 注入） |
 | 校验脚本 | `scripts/check_html.py` | Step 5 自检 |
 
 ## Notes
